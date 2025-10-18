@@ -1,549 +1,415 @@
-// ===== GESTIONNAIRE DE DONNÉES SUPABASE =====
-// Gère toutes les opérations avec la base de données
+// ===== DATA MANAGER MODULE =====
+// Gestion des données de match avec Supabase
+// CORRECTION: Utilise les vrais player_id depuis Supabase
 
 class DataManager {
     constructor() {
-        this.currentMatch = null;
-        this.currentTeamId = null;
-        this.isReady = false;
-        this.init();
+        this.matchId = null;
+        this.teamId = null;
+        this.players = [];
+        this.events = [];
+        this.stats = {};
+        
+        console.log('📦 DataManager initialisé');
     }
 
-    async init() {
-        // Attendre que Supabase soit prêt
-        let attempts = 0;
-        while (!isSupabaseReady() && attempts < 10) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
-        }
-
-        if (!isSupabaseReady()) {
-            console.error('❌ Supabase non disponible');
-            return;
-        }
-
-        this.isReady = true;
-        console.log('✅ DataManager initialisé');
-    }
-
-    // ===== MATCHS =====
+    // ===== INITIALISATION MATCH =====
 
     /**
-     * Créer un nouveau match
+     * Initialiser un nouveau match
      */
-    async createMatch(teamId, teamName, opponentName, venue = '', duration = 90) {
-        if (!this.isReady) {
-            showNotification('Base de données non prête', 'error');
-            return null;
-        }
+    async initializeMatch(matchId, teamId) {
+        this.matchId = matchId;
+        this.teamId = teamId;
+        this.events = [];
+        this.stats = {};
 
-        try {
-            const { data, error } = await supabaseClient
-                .from('matches')
-                .insert({
-                    team_id: teamId,
-                    team_name: teamName,
-                    opponent_name: opponentName,
-                    venue: venue,
-                    duration: duration,
-                    status: 'ongoing',
-                    match_date: new Date().toISOString()
-                })
-                .select();
+        // Charger les joueuses de l'équipe depuis Supabase
+        await this.loadTeamPlayers();
 
-            if (error) throw error;
-
-            this.currentMatch = data[0];
-            console.log('✅ Match créé :', this.currentMatch);
-            return this.currentMatch;
-
-        } catch (error) {
-            console.error('❌ Erreur création match :', error);
-            showNotification('Erreur création du match', 'error');
-            return null;
-        }
+        console.log('✅ Match initialisé:', matchId);
+        return true;
     }
 
     /**
-     * Mettre à jour le score et le temps d'un match
+     * Charger les joueuses de l'équipe depuis Supabase
      */
-    async updateMatch(matchId, teamScore, opponentScore, currentTime, half) {
-        if (!this.isReady) return false;
-
-        try {
-            const { error } = await supabaseClient
-                .from('matches')
-                .update({
-                    team_score: teamScore,
-                    opponent_score: opponentScore,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', matchId);
-
-            if (error) throw error;
-
-            console.log('✅ Match mis à jour');
-            return true;
-
-        } catch (error) {
-            console.error('❌ Erreur mise à jour match :', error);
+    async loadTeamPlayers() {
+        if (!window.supabaseSync || !window.supabaseSync.isReady()) {
+            console.warn('⚠️ Supabase non disponible');
             return false;
         }
-    }
-
-    /**
-     * Terminer un match
-     */
-    async finishMatch(matchId) {
-        if (!this.isReady) return false;
 
         try {
-            const { error } = await supabaseClient
-                .from('matches')
-                .update({ status: 'finished' })
-                .eq('id', matchId);
-
-            if (error) throw error;
-
-            console.log('✅ Match terminé');
-            return true;
-
-        } catch (error) {
-            console.error('❌ Erreur fermeture match :', error);
-            return false;
-        }
-    }
-
-    /**
-     * Récupérer les détails d'un match
-     */
-    async getMatch(matchId) {
-        if (!this.isReady) return null;
-
-        try {
-            const { data, error } = await supabaseClient
-                .from('matches')
+            const { data: players, error } = await window.supabaseSync.client
+                .from('players')
                 .select('*')
-                .eq('id', matchId)
-                .single();
-
-            if (error) throw error;
-
-            return data;
-
-        } catch (error) {
-            console.error('❌ Erreur récupération match :', error);
-            return null;
-        }
-    }
-
-    // ===== ÉVÉNEMENTS =====
-
-    /**
-     * Enregistrer un événement du match
-     * @param {string} matchId - ID du match
-     * @param {string} playerId - ID du joueur (null si action équipe)
-     * @param {string} eventType - Type d'événement (goal, shot_on_target, shot_off_target, card, foul, assist, etc.)
-     * @param {number} eventTime - Temps en secondes
-     * @param {boolean} isTeam - true si action de notre équipe
-     * @param {string} cardType - Type de carton (yellow, red, white) - null si pas carton
-     */
-    async recordEvent(matchId, playerId, eventType, eventTime, isTeam, cardType = null) {
-        if (!this.isReady) return null;
-
-        try {
-            const { data, error } = await supabaseClient
-                .from('match_events')
-                .insert({
-                    match_id: matchId,
-                    player_id: playerId,
-                    event_type: eventType,
-                    event_time: eventTime,
-                    is_team: isTeam,
-                    card_type: cardType
-                })
-                .select();
-
-            if (error) throw error;
-
-            console.log('✅ Événement enregistré :', data[0]);
-            return data[0];
-
-        } catch (error) {
-            console.error('❌ Erreur enregistrement événement :', error);
-            return null;
-        }
-    }
-
-    /**
-     * Récupérer tous les événements d'un match
-     */
-    async getMatchEvents(matchId) {
-        if (!this.isReady) return [];
-
-        try {
-            const { data, error } = await supabaseClient
-                .from('match_events')
-                .select('*')
-                .eq('match_id', matchId)
-                .order('event_time', { ascending: true });
-
-            if (error) throw error;
-
-            return data;
-
-        } catch (error) {
-            console.error('❌ Erreur récupération événements :', error);
-            return [];
-        }
-    }
-
-    // ===== STATISTIQUES JOUEUR =====
-
-    /**
-     * Mettre à jour les stats d'un joueur pour un match
-     */
-    async updatePlayerStats(matchId, playerId, statUpdates) {
-        if (!this.isReady) return false;
-
-        try {
-            // Récupérer les stats actuelles
-            let { data: existingStats, error: fetchError } = await supabaseClient
-                .from('player_match_stats')
-                .select('*')
-                .eq('match_id', matchId)
-                .eq('player_id', playerId)
-                .single();
-
-            if (fetchError && fetchError.code !== 'PGRST116') {
-                throw fetchError;
-            }
-
-            if (existingStats) {
-                // Mettre à jour les stats existantes
-                const { error: updateError } = await supabaseClient
-                    .from('player_match_stats')
-                    .update({
-                        ...existingStats,
-                        ...statUpdates,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('match_id', matchId)
-                    .eq('player_id', playerId);
-
-                if (updateError) throw updateError;
-
-            } else {
-                // Créer les stats si n'existent pas
-                const { error: insertError } = await supabaseClient
-                    .from('player_match_stats')
-                    .insert({
-                        match_id: matchId,
-                        player_id: playerId,
-                        ...statUpdates
-                    });
-
-                if (insertError) throw insertError;
-            }
-
-            console.log('✅ Stats joueur mises à jour');
-            return true;
-
-        } catch (error) {
-            console.error('❌ Erreur mise à jour stats :', error);
-            return false;
-        }
-    }
-
-    /**
-     * Récupérer les stats d'un joueur pour un match
-     */
-    async getPlayerStats(matchId, playerId) {
-        if (!this.isReady) return null;
-
-        try {
-            const { data, error } = await supabaseClient
-                .from('player_match_stats')
-                .select('*')
-                .eq('match_id', matchId)
-                .eq('player_id', playerId)
-                .single();
-
-            if (error && error.code !== 'PGRST116') throw error;
-
-            return data || null;
-
-        } catch (error) {
-            console.error('❌ Erreur récupération stats joueur :', error);
-            return null;
-        }
-    }
-
-    /**
-     * Obtenir toutes les stats des joueurs pour un match
-     */
-    async getAllPlayerStats(matchId) {
-        if (!this.isReady) return [];
-
-        try {
-            const { data, error } = await supabaseClient
-                .from('player_match_stats')
-                .select('*, players(*)')
-                .eq('match_id', matchId);
-
-            if (error) throw error;
-
-            return data;
-
-        } catch (error) {
-            console.error('❌ Erreur récupération stats :', error);
-            return [];
-        }
-    }
-
-    // ===== TEMPS DE JEU =====
-
-    /**
-     * Enregistrer une entrée/sortie de joueur
-     */
-    async recordPlayTime(matchId, playerId, eventType, eventTime) {
-        if (!this.isReady) return null;
-
-        try {
-            const { data, error } = await supabaseClient
-                .from('player_play_times')
-                .insert({
-                    match_id: matchId,
-                    player_id: playerId,
-                    event_type: eventType, // 'entry' ou 'exit'
-                    event_time: eventTime
-                })
-                .select();
-
-            if (error) throw error;
-
-            console.log('✅ Temps de jeu enregistré');
-            return data[0];
-
-        } catch (error) {
-            console.error('❌ Erreur enregistrement temps jeu :', error);
-            return null;
-        }
-    }
-
-    /**
-     * Calculer le temps de jeu d'un joueur
-     */
-    async calculatePlayTime(matchId, playerId) {
-        if (!this.isReady) return 0;
-
-        try {
-            const { data, error } = await supabaseClient
-                .from('player_play_times')
-                .select('*')
-                .eq('match_id', matchId)
-                .eq('player_id', playerId)
-                .order('event_time', { ascending: true });
-
-            if (error) throw error;
-
-            let totalTime = 0;
-            let entryTime = null;
-
-            data.forEach(event => {
-                if (event.event_type === 'entry') {
-                    entryTime = event.event_time;
-                } else if (event.event_type === 'exit' && entryTime !== null) {
-                    totalTime += (event.event_time - entryTime);
-                    entryTime = null;
-                }
-            });
-
-            // Si encore sur le terrain à la fin du match
-            if (entryTime !== null) {
-                totalTime += (90 * 60 - entryTime); // 90 minutes en secondes
-            }
-
-            return Math.floor(totalTime / 60); // Retourner en minutes
-
-        } catch (error) {
-            console.error('❌ Erreur calcul temps jeu :', error);
-            return 0;
-        }
-    }
-
-    // ===== STATISTIQUES ADVERSAIRE =====
-
-    /**
-     * Mettre à jour les stats de l'équipe adverse
-     */
-    async updateOpponentStats(matchId, statUpdates) {
-        if (!this.isReady) return false;
-
-        try {
-            let { data: existingStats, error: fetchError } = await supabaseClient
-                .from('opponent_stats')
-                .select('*')
-                .eq('match_id', matchId)
-                .single();
-
-            if (fetchError && fetchError.code !== 'PGRST116') {
-                throw fetchError;
-            }
-
-            if (existingStats) {
-                const { error: updateError } = await supabaseClient
-                    .from('opponent_stats')
-                    .update({
-                        ...existingStats,
-                        ...statUpdates,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('match_id', matchId);
-
-                if (updateError) throw updateError;
-
-            } else {
-                const { error: insertError } = await supabaseClient
-                    .from('opponent_stats')
-                    .insert({
-                        match_id: matchId,
-                        ...statUpdates
-                    });
-
-                if (insertError) throw insertError;
-            }
-
-            console.log('✅ Stats adversaire mises à jour');
-            return true;
-
-        } catch (error) {
-            console.error('❌ Erreur mise à jour stats adversaire :', error);
-            return false;
-        }
-    }
-
-    /**
-     * Récupérer les stats de l'équipe adverse
-     */
-    async getOpponentStats(matchId) {
-        if (!this.isReady) return null;
-
-        try {
-            const { data, error } = await supabaseClient
-                .from('opponent_stats')
-                .select('*')
-                .eq('match_id', matchId)
-                .maybeSingle();
+                .eq('team_id', this.teamId);
 
             if (error) {
-                // Si la table n'existe pas ou autre erreur, retourner null gracieusement
-                console.warn('⚠️ Stats adversaire non disponibles :', error.message);
-                return null;
+                console.error('❌ Erreur chargement joueuses:', error);
+                return false;
             }
 
-            return data || null;
+            this.players = players || [];
+            console.log('✅ Joueuses chargées:', this.players.length);
 
+            // Initialiser les stats pour chaque joueuse
+            this.players.forEach(player => {
+                this.stats[player.id] = {
+                    goals: 0,
+                    shots_on_target: 0,
+                    shots_off_target: 0,
+                    saves: 0,
+                    cards_yellow: 0,
+                    cards_red: 0,
+                    fouls_committed: 0,
+                    fouls_received: 0,
+                    free_kicks: 0
+                };
+            });
+
+            return true;
         } catch (error) {
-            console.warn('⚠️ Erreur récupération stats adversaire (non-bloquant) :', error);
+            console.error('❌ Exception chargement joueuses:', error);
+            return false;
+        }
+    }
+
+    // ===== GESTION ÉVÉNEMENTS =====
+
+    /**
+     * Enregistrer un événement de match
+     */
+    async recordEvent(eventType, playerId, details = {}) {
+        // Vérifier que le joueur existe et appartient à l'équipe
+        const player = this.players.find(p => p.id === playerId);
+        
+        if (!player) {
+            console.error('❌ Joueur non trouvé:', playerId);
             return null;
         }
+
+        const event = {
+            id: 'evt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+            match_id: this.matchId,
+            team_id: this.teamId,
+            player_id: player.id, // Utiliser l'UUID Supabase
+            event_type: eventType,
+            event_details: details,
+            match_minute: details.minute || 0,
+            half: details.half || 1,
+            is_team_event: true,
+            created_at: new Date().toISOString()
+        };
+
+        this.events.push(event);
+
+        // Enregistrer sur Supabase
+        if (window.supabaseSync && window.supabaseSync.isReady()) {
+            await window.supabaseSync.recordEventRemote(event);
+        }
+
+        console.log('✅ Événement enregistré:', eventType, player.name);
+        return event;
     }
 
-    // ===== ÉQUIPES =====
-
     /**
-     * Créer ou récupérer l'équipe
+     * Enregistrer un but
      */
-    async ensureTeam(teamName) {
-        if (!this.isReady) return null;
-
-        try {
-            // Chercher si l'équipe existe
-            let { data: existingTeam, error: searchError } = await supabaseClient
-                .from('teams')
-                .select('*')
-                .eq('name', teamName)
-                .single();
-
-            if (searchError && searchError.code !== 'PGRST116') {
-                throw searchError;
-            }
-
-            if (existingTeam) {
-                this.currentTeamId = existingTeam.id;
-                return existingTeam;
-            }
-
-            // Créer l'équipe
-            const { data: newTeam, error: createError } = await supabaseClient
-                .from('teams')
-                .insert({ name: teamName })
-                .select()
-                .single();
-
-            if (createError) throw createError;
-
-            this.currentTeamId = newTeam.id;
-            return newTeam;
-
-        } catch (error) {
-            console.error('❌ Erreur gestion équipe :', error);
+    async recordGoal(playerId, details = {}) {
+        const player = this.players.find(p => p.id === playerId);
+        if (!player) {
+            console.error('❌ Joueur non trouvé pour but');
             return null;
         }
+
+        // Mettre à jour les stats
+        this.stats[playerId].goals = (this.stats[playerId].goals || 0) + 1;
+
+        // Enregistrer l'événement
+        const event = await this.recordEvent('goal', playerId, {
+            ...details,
+            goalType: details.goalType || 'normal'
+        });
+
+        // Mettre à jour les stats joueur sur Supabase
+        await this.updatePlayerStats(playerId);
+
+        return event;
     }
 
-    // ===== HISTORIQUE =====
+    /**
+     * Enregistrer un tir
+     */
+    async recordShot(playerId, onTarget = true, details = {}) {
+        const player = this.players.find(p => p.id === playerId);
+        if (!player) {
+            console.error('❌ Joueur non trouvé pour tir');
+            return null;
+        }
+
+        if (onTarget) {
+            this.stats[playerId].shots_on_target = (this.stats[playerId].shots_on_target || 0) + 1;
+        } else {
+            this.stats[playerId].shots_off_target = (this.stats[playerId].shots_off_target || 0) + 1;
+        }
+
+        const event = await this.recordEvent('shot', playerId, {
+            ...details,
+            onTarget: onTarget
+        });
+
+        await this.updatePlayerStats(playerId);
+        return event;
+    }
 
     /**
-     * Récupérer l'historique des matchs
+     * Enregistrer un carton
      */
-    async getMatchHistory(teamId, limit = 20) {
-        if (!this.isReady) return [];
+    async recordCard(playerId, cardColor = 'yellow', details = {}) {
+        const player = this.players.find(p => p.id === playerId);
+        if (!player) {
+            console.error('❌ Joueur non trouvé pour carton');
+            return null;
+        }
+
+        if (cardColor === 'yellow') {
+            this.stats[playerId].cards_yellow = (this.stats[playerId].cards_yellow || 0) + 1;
+        } else if (cardColor === 'red') {
+            this.stats[playerId].cards_red = (this.stats[playerId].cards_red || 0) + 1;
+        }
+
+        const event = await this.recordEvent('card', playerId, {
+            ...details,
+            cardColor: cardColor
+        });
+
+        await this.updatePlayerStats(playerId);
+        return event;
+    }
+
+    /**
+     * Enregistrer une faute
+     */
+    async recordFoul(playerId, committed = true, details = {}) {
+        const player = this.players.find(p => p.id === playerId);
+        if (!player) {
+            console.error('❌ Joueur non trouvé pour faute');
+            return null;
+        }
+
+        if (committed) {
+            this.stats[playerId].fouls_committed = (this.stats[playerId].fouls_committed || 0) + 1;
+        } else {
+            this.stats[playerId].fouls_received = (this.stats[playerId].fouls_received || 0) + 1;
+        }
+
+        const event = await this.recordEvent('foul', playerId, {
+            ...details,
+            committed: committed
+        });
+
+        await this.updatePlayerStats(playerId);
+        return event;
+    }
+
+    /**
+     * Enregistrer un arrêt (gardienne)
+     */
+    async recordSave(playerId, saveType = 'normal', details = {}) {
+        const player = this.players.find(p => p.id === playerId);
+        if (!player) {
+            console.error('❌ Joueur non trouvé pour arrêt');
+            return null;
+        }
+
+        this.stats[playerId].saves = (this.stats[playerId].saves || 0) + 1;
+
+        const event = await this.recordEvent('save', playerId, {
+            ...details,
+            saveType: saveType
+        });
+
+        await this.updatePlayerStats(playerId);
+        return event;
+    }
+
+    /**
+     * Enregistrer un coup franc
+     */
+    async recordFreeKick(playerId, details = {}) {
+        const player = this.players.find(p => p.id === playerId);
+        if (!player) {
+            console.error('❌ Joueur non trouvé pour coup franc');
+            return null;
+        }
+
+        this.stats[playerId].free_kicks = (this.stats[playerId].free_kicks || 0) + 1;
+
+        const event = await this.recordEvent('freekick', playerId, details);
+        await this.updatePlayerStats(playerId);
+        return event;
+    }
+
+    /**
+     * Enregistrer une substitution
+     */
+    async recordSubstitution(outPlayerId, inPlayerId, details = {}) {
+        const outPlayer = this.players.find(p => p.id === outPlayerId);
+        const inPlayer = this.players.find(p => p.id === inPlayerId);
+
+        if (!outPlayer || !inPlayer) {
+            console.error('❌ Joueurs non trouvés pour substitution');
+            return null;
+        }
+
+        const event = {
+            id: 'evt_' + Date.now(),
+            match_id: this.matchId,
+            team_id: this.teamId,
+            player_id: outPlayerId,
+            event_type: 'substitution',
+            event_details: {
+                out_player_id: outPlayerId,
+                in_player_id: inPlayerId,
+                ...details
+            },
+            match_minute: details.minute || 0,
+            half: details.half || 1,
+            is_team_event: true,
+            created_at: new Date().toISOString()
+        };
+
+        this.events.push(event);
+
+        if (window.supabaseSync && window.supabaseSync.isReady()) {
+            await window.supabaseSync.recordEventRemote(event);
+        }
+
+        console.log('✅ Substitution:', outPlayer.name, '→', inPlayer.name);
+        return event;
+    }
+
+    // ===== GESTION STATS =====
+
+    /**
+     * Mettre à jour les stats joueur sur Supabase
+     */
+    async updatePlayerStats(playerId) {
+        if (!window.supabaseSync || !window.supabaseSync.isReady()) {
+            return false;
+        }
+
+        if (!this.stats[playerId]) {
+            console.warn('⚠️ Stats non trouvées pour:', playerId);
+            return false;
+        }
 
         try {
-            const { data, error } = await supabaseClient
-                .from('matches')
-                .select('*')
-                .eq('team_id', teamId)
-                .order('match_date', { ascending: false })
-                .limit(limit);
+            const result = await window.supabaseSync.updatePlayerStatsRemote({
+                match_id: this.matchId,
+                team_id: this.teamId,
+                player_id: playerId,
+                ...this.stats[playerId]
+            });
 
-            if (error) throw error;
-
-            return data;
-
+            if (result) {
+                console.log('✅ Stats joueur mises à jour');
+                return true;
+            }
+            return false;
         } catch (error) {
-            console.error('❌ Erreur récupération historique :', error);
-            return [];
+            console.error('❌ Erreur mise à jour stats:', error);
+            return false;
         }
     }
 
     /**
-     * Récupérer toutes les stats d'un joueur sur plusieurs matchs
+     * Récupérer les stats d'un joueur
      */
-    async getPlayerCareerStats(playerId) {
-        if (!this.isReady) return [];
+    getPlayerStats(playerId) {
+        return this.stats[playerId] || null;
+    }
 
-        try {
-            const { data, error } = await supabaseClient
-                .from('player_match_stats')
-                .select('*, matches(*)')
-                .eq('player_id', playerId)
-                .order('matches.match_date', { ascending: false });
+    /**
+     * Récupérer les stats globales
+     */
+    getGlobalStats() {
+        const globalStats = {
+            goals: 0,
+            shots_on_target: 0,
+            shots_off_target: 0,
+            saves: 0,
+            cards_yellow: 0,
+            cards_red: 0,
+            fouls_committed: 0,
+            fouls_received: 0,
+            free_kicks: 0
+        };
 
-            if (error) throw error;
+        Object.values(this.stats).forEach(playerStats => {
+            Object.keys(globalStats).forEach(key => {
+                globalStats[key] += playerStats[key] || 0;
+            });
+        });
 
-            return data;
+        return globalStats;
+    }
 
-        } catch (error) {
-            console.error('❌ Erreur récupération stats carrière :', error);
-            return [];
-        }
+    // ===== UTILITAIRES =====
+
+    /**
+     * Trouver une joueuse par ID
+     */
+    getPlayer(playerId) {
+        return this.players.find(p => p.id === playerId) || null;
+    }
+
+    /**
+     * Récupérer toutes les joueuses
+     */
+    getPlayers() {
+        return this.players;
+    }
+
+    /**
+     * Récupérer tous les événements
+     */
+    getEvents() {
+        return this.events;
+    }
+
+    /**
+     * Exporter les données
+     */
+    export() {
+        return {
+            matchId: this.matchId,
+            teamId: this.teamId,
+            players: this.players,
+            events: this.events,
+            stats: this.stats,
+            exportedAt: new Date().toISOString()
+        };
+    }
+
+    /**
+     * Nettoyer les données du match
+     */
+    clear() {
+        this.matchId = null;
+        this.teamId = null;
+        this.players = [];
+        this.events = [];
+        this.stats = {};
+        console.log('✅ DataManager nettoyé');
     }
 }
 
-// Créer l'instance globale
-const dataManager = new DataManager();
+// ===== INITIALISATION GLOBALE =====
 
-console.log('📦 Module DataManager chargé');
+if (typeof window !== 'undefined') {
+    window.dataManager = new DataManager();
+    console.log('📦 Module DataManager chargé');
+}

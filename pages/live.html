@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📺 Live - Football Stats Manager</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📺 Suivi Live du Match</h1>
+            <p>Spectateur - Mode lecture seule</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <a href="../index.html" class="nav-link">🏠 Accueil</a>
+            <a href="teams.html" class="nav-link">👥 Équipes</a>
+            <a href="composition.html" class="nav-link">📋 Compo</a>
+            <a href="match.html" class="nav-link">⚽ Match</a>
+            <a href="live.html" class="nav-link active">📺 Live</a>
+            <a href="stats.html" class="nav-link">📊 Stats</a>
+        </nav>
+
+        <main class="main-content">
+            <!-- Sélection du match -->
+            <section id="matchSelectorSection" class="team-card">
+                <h2>🎯 Sélectionner un Match</h2>
+                
+                <div class="form-group">
+                    <label for="matchLiveId">Entrez l'ID du match (depuis le lien) :</label>
+                    <input type="text" id="matchLiveId" placeholder="Ex: match_1234567890">
+                </div>
+
+                <button class="btn btn-primary" onclick="connectToMatch()" style="width: 100%;">
+                    🔗 Se connecter
+                </button>
+
+                <p style="color: #7f8c8d; font-size: 0.9rem; margin-top: 1rem;">
+                    💡 Demandez l'ID du match à celui qui fait le suivi
+                </p>
+            </section>
+
+            <!-- Affichage Live (visible après connexion) -->
+            <section id="liveDisplaySection" class="team-card" style="display: none;">
+                <h2>📺 <span id="liveTeamName"></span> vs <span id="liveOpponentName"></span></h2>
+
+                <!-- Statut connexion -->
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                    <div id="connectionIndicator" style="width: 12px; height: 12px; border-radius: 50%; background: #e74c3c;"></div>
+                    <span id="connectionStatus" style="color: #7f8c8d;">Déconnecté</span>
+                </div>
+
+                <!-- Score et temps -->
+                <div style="background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; padding: 2rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; text-align: center;">
+                        <!-- Équipe 1 -->
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.1rem;" id="liveDisplayTeam"></h3>
+                            <div style="font-size: 2.5rem; font-weight: bold; margin: 0.5rem 0;" id="liveScoreTeam">0</div>
+                        </div>
+
+                        <!-- Milieu (temps) -->
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: bold;">
+                                <span id="liveMinutes">00</span>:<span id="liveSeconds">00</span>
+                            </div>
+                            <div style="font-size: 0.9rem; margin-top: 0.5rem;">
+                                <span id="liveHalf">1ère mi-temps</span>
+                            </div>
+                        </div>
+
+                        <!-- Équipe 2 -->
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.1rem;" id="liveDisplayOpponent"></h3>
+                            <div style="font-size: 2.5rem; font-weight: bold; margin: 0.5rem 0;" id="liveScoreOpponent">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistiques -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold;">⚽</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: #3498db;" id="liveTotalGoals">-</div>
+                        <div style="font-size: 0.9rem; color: #7f8c8d;">Total Buts</div>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold;">🎯</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: #e74c3c;" id="liveTotalShots">-</div>
+                        <div style="font-size: 0.9rem; color: #7f8c8d;">Total Tirs</div>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold;">🟨</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: #f39c12;" id="liveTotalCards">-</div>
+                        <div style="font-size: 0.9rem; color: #7f8c8d;">Total Cartons</div>
+                    </div>
+                </div>
+
+                <!-- Timeline des événements -->
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h3>📅 Événements du Match</h3>
+                    <div id="liveEventsList" style="max-height: 400px; overflow-y: auto;">
+                        <p style="text-align: center; color: #bdc3c7;">En attente d'événements...</p>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="btn btn-warning" onclick="refreshLiveData()">🔄 Actualiser</button>
+                    <button class="btn btn-secondary" onclick="disconnectFromMatch()">✖️ Quitter</button>
+                </div>
+            </section>
+
+            <!-- Message erreur -->
+            <section id="errorSection" class="team-card" style="display: none; background: #fadbd8; border: 2px solid #e74c3c;">
+                <h2>⚠️ Erreur</h2>
+                <p id="errorMessage"></p>
+                <button class="btn btn-secondary" onclick="resetToSelector()">🔙 Retour</button>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/storage.js"></script>
+    <script src="../js/supabase-sync.js"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/notification.js"></script>
+
+    <script>
+        let currentMatchId = null;
+        let refreshInterval = null;
+        let matchData = {
+            team: {},
+            opponent: {},
+            score: { team: 0, opponent: 0 },
+            time: 0,
+            half: 1,
+            events: []
+        };
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Vérifier l'URL pour voir s'il y a un match à charger
+            const urlParams = new URLSearchParams(window.location.search);
+            const matchId = urlParams.get('match');
+            
+            if (matchId) {
+                document.getElementById('matchLiveId').value = matchId;
+                connectToMatch();
+            }
+        });
+
+        // ===== CONNEXION MATCH =====
+
+        function connectToMatch() {
+            const matchId = document.getElementById('matchLiveId').value.trim();
+            
+            if (!matchId) {
+                showError('Veuillez entrer un ID de match');
+                return;
+            }
+
+            currentMatchId = matchId;
+            updateConnectionStatus('connecting');
+            
+            // Charger les données du match
+            loadMatchData();
+        }
+
+        function loadMatchData() {
+            if (!window.supabaseSync || !window.supabaseSync.isReady()) {
+                // Mode fallback : localStorage
+                loadMatchDataFromLocal();
+                return;
+            }
+
+            // Charger depuis Supabase
+            loadMatchDataFromSupabase();
+        }
+
+        async function loadMatchDataFromSupabase() {
+            try {
+                const { data: match, error } = await window.supabaseSync.client
+                    .from('matches')
+                    .select('*, team:team_id(*)')
+                    .eq('id', currentMatchId)
+                    .single();
+
+                if (error || !match) {
+                    showError('Match non trouvé');
+                    return false;
+                }
+
+                // Charger les événements
+                const { data: events } = await window.supabaseSync.client
+                    .from('match_events')
+                    .select('*')
+                    .eq('match_id', currentMatchId)
+                    .order('created_at', { ascending: true });
+
+                // Mettre à jour les données
+                matchData = {
+                    id: match.id,
+                    team: match.team,
+                    opponent_name: match.opponent_name,
+                    score: {
+                        team: match.score_team || 0,
+                        opponent: match.score_opponent || 0
+                    },
+                    time: match.match_time || 0,
+                    half: match.half || 1,
+                    events: events || [],
+                    status: match.status
+                };
+
+                displayMatchData();
+                updateConnectionStatus('connected');
+
+                // Commencer le polling
+                if (refreshInterval) clearInterval(refreshInterval);
+                refreshInterval = setInterval(() => {
+                    refreshLiveData();
+                }, 5000); // Actualiser toutes les 5 secondes
+
+                return true;
+            } catch (error) {
+                console.error('Erreur chargement match:', error);
+                showError('Erreur de connexion: ' + error.message);
+                return false;
+            }
+        }
+
+        function loadMatchDataFromLocal() {
+            // Fallback en localStorage
+            const saved = localStorage.getItem('footballStats_live_' + currentMatchId);
+            if (saved) {
+                matchData = JSON.parse(saved);
+                displayMatchData();
+                updateConnectionStatus('connected');
+
+                if (refreshInterval) clearInterval(refreshInterval);
+                refreshInterval = setInterval(() => {
+                    refreshLiveData();
+                }, 5000);
+            } else {
+                showError('Match non trouvé localement');
+            }
+        }
+
+        function displayMatchData() {
+            // Afficher le match
+            document.getElementById('matchSelectorSection').style.display = 'none';
+            document.getElementById('errorSection').style.display = 'none';
+            document.getElementById('liveDisplaySection').style.display = 'block';
+
+            // Remplir les informations
+            document.getElementById('liveTeamName').textContent = matchData.team?.name || 'Équipe';
+            document.getElementById('liveOpponentName').textContent = matchData.opponent_name || 'Adversaire';
+            document.getElementById('liveDisplayTeam').textContent = matchData.team?.name || 'Équipe';
+            document.getElementById('liveDisplayOpponent').textContent = matchData.opponent_name || 'Adversaire';
+
+            // Score
+            document.getElementById('liveScoreTeam').textContent = matchData.score.team;
+            document.getElementById('liveScoreOpponent').textContent = matchData.score.opponent;
+
+            // Temps
+            updateTimeDisplay();
+
+            // Événements
+            updateEventsDisplay();
+
+            // Statistiques
+            updateStatsDisplay();
+        }
+
+        function updateTimeDisplay() {
+            const minutes = Math.floor(matchData.time / 60);
+            const seconds = matchData.time % 60;
+            document.getElementById('liveMinutes').textContent = String(minutes).padStart(2, '0');
+            document.getElementById('liveSeconds').textContent = String(seconds).padStart(2, '0');
+            document.getElementById('liveHalf').textContent = matchData.half === 1 ? '1ère mi-temps' : '2ème mi-temps';
+        }
+
+        function updateEventsDisplay() {
+            const container = document.getElementById('liveEventsList');
+            
+            if (!matchData.events || matchData.events.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #bdc3c7;">Aucun événement pour le moment</p>';
+                return;
+            }
+
+            container.innerHTML = matchData.events.map(evt => {
+                const eventIcons = {
+                    goal: '⚽',
+                    shot: '🎯',
+                    card: '🟨',
+                    foul: '⚠️',
+                    save: '🧤',
+                    substitution: '🔄',
+                    freekick: '⚽'
+                };
+
+                const icon = eventIcons[evt.event_type] || '•';
+                const minute = evt.match_minute || 0;
+
+                return `
+                    <div style="padding: 0.75rem; border-bottom: 1px solid #ecf0f1; display: flex; gap: 1rem; align-items: center;">
+                        <span style="font-weight: bold; color: #3498db; min-width: 40px;">${minute}'</span>
+                        <span style="font-size: 1.2rem;">${icon}</span>
+                        <span style="flex: 1; color: #2c3e50;">${evt.event_type.toUpperCase()}</span>
+                        <span style="color: #7f8c8d; font-size: 0.85rem;">
+                            ${evt.half === 2 ? '2ème' : '1ère'} MT
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStatsDisplay() {
+            const events = matchData.events || [];
+            
+            const goals = events.filter(e => e.event_type === 'goal').length;
+            const shots = events.filter(e => e.event_type === 'shot').length;
+            const cards = events.filter(e => e.event_type === 'card').length;
+
+            document.getElementById('liveTotalGoals').textContent = goals;
+            document.getElementById('liveTotalShots').textContent = shots;
+            document.getElementById('liveTotalCards').textContent = cards;
+        }
+
+        function updateConnectionStatus(status) {
+            const indicator = document.getElementById('connectionIndicator');
+            const statusText = document.getElementById('connectionStatus');
+
+            if (status === 'connected') {
+                indicator.style.background = '#2ecc71';
+                statusText.textContent = '✅ Connecté - Données en direct';
+            } else if (status === 'connecting') {
+                indicator.style.background = '#f39c12';
+                statusText.textContent = '⏳ Connexion en cours...';
+            } else {
+                indicator.style.background = '#e74c3c';
+                statusText.textContent = '❌ Déconnecté';
+            }
+        }
+
+        async function refreshLiveData() {
+            if (!currentMatchId) return;
+
+            try {
+                if (window.supabaseSync && window.supabaseSync.isReady()) {
+                    // Charger depuis Supabase
+                    const { data: match, error: matchError } = await window.supabaseSync.client
+                        .from('matches')
+                        .select('*')
+                        .eq('id', currentMatchId)
+                        .single();
+
+                    if (!matchError && match) {
+                        // Charger les événements
+                        const { data: events } = await window.supabaseSync.client
+                            .from('match_events')
+                            .select('*')
+                            .eq('match_id', currentMatchId)
+                            .order('created_at', { ascending: true });
+
+                        // Mettre à jour les données
+                        matchData.score = {
+                            team: match.score_team || 0,
+                            opponent: match.score_opponent || 0
+                        };
+                        matchData.time = match.match_time || 0;
+                        matchData.half = match.half || 1;
+                        matchData.events = events || [];
+
+                        // Mettre à jour l'affichage
+                        document.getElementById('liveScoreTeam').textContent = matchData.score.team;
+                        document.getElementById('liveScoreOpponent').textContent = matchData.score.opponent;
+                        updateTimeDisplay();
+                        updateEventsDisplay();
+                        updateStatsDisplay();
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur actualisation:', error);
+            }
+        }
+
+        function disconnectFromMatch() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            
+            currentMatchId = null;
+            matchData = {};
+            
+            document.getElementById('liveDisplaySection').style.display = 'none';
+            document.getElementById('matchSelectorSection').style.display = 'block';
+            document.getElementById('matchLiveId').value = '';
+            
+            updateConnectionStatus('disconnected');
+            showNotification('Déconnecté du match', 'info');
+        }
+
+        function resetToSelector() {
+            document.getElementById('errorSection').style.display = 'none';
+            document.getElementById('matchSelectorSection').style.display = 'block';
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorSection').style.display = 'block';
+            document.getElementById('matchSelectorSection').style.display = 'none';
+            document.getElementById('liveDisplaySection').style.display = 'none';
+        }
+
+        function showNotification(message, type = 'info') {
+            if (typeof window.NotificationManager !== 'undefined') {
+                window.NotificationManager.show(message, type);
+            } else {
+                console.log(`[${type}] ${message}`);
+            }
+        }
+    </script>
+</body>
+</html>

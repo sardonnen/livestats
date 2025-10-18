@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚽ Match Live - Football Stats Manager</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>⚽ Match Live</h1>
+            <p>Suivi en temps réel des événements</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <a href="../index.html" class="nav-link">🏠 Accueil</a>
+            <a href="teams.html" class="nav-link">👥 Équipes</a>
+            <a href="composition.html" class="nav-link">📋 Compo</a>
+            <a href="match.html" class="nav-link active">⚽ Match</a>
+            <a href="live.html" class="nav-link">📺 Live</a>
+            <a href="stats.html" class="nav-link">📊 Stats</a>
+        </nav>
+
+        <main class="main-content">
+            <!-- Sélection équipe et composition -->
+            <section id="setupSection" class="team-card">
+                <h2>🎯 Configuration du Match</h2>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="matchTeamSelector">Équipe *</label>
+                        <select id="matchTeamSelector" required>
+                            <option value="">-- Sélectionner une équipe --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="matchOpponentName">Nom adversaire *</label>
+                        <input type="text" id="matchOpponentName" placeholder="Ex: AS Saint-Herblain" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="matchVenue">Lieu</label>
+                        <input type="text" id="matchVenue" placeholder="Ex: Stade Municipal">
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">
+                        💡 La composition sauvegardée pour cette équipe sera utilisée. Vous pouvez la changer dans 📋 Compo
+                    </p>
+                </div>
+
+                <button class="btn btn-success" onclick="startMatch()" style="margin-top: 1.5rem; width: 100%;">
+                    ▶️ Démarrer le Match
+                </button>
+            </section>
+
+            <!-- Interface match (visible après démarrage) -->
+            <section id="matchSection" class="team-card" style="display: none;">
+                <h2>⚽ <span id="displayTeamName"></span> vs <span id="displayOpponentName"></span></h2>
+
+                <!-- Score et temps -->
+                <div style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; padding: 2rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; text-align: center;">
+                        <!-- Équipe 1 -->
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.1rem;" id="teamNameDisplay"></h3>
+                            <div style="font-size: 2.5rem; font-weight: bold; margin: 0.5rem 0;" id="scoreTeam">0</div>
+                        </div>
+
+                        <!-- Milieu (temps) -->
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: bold;">
+                                <span id="matchMinutes">00</span>:<span id="matchSeconds">00</span>
+                            </div>
+                            <div style="font-size: 0.9rem; margin-top: 0.5rem;">
+                                <span id="halfDisplay">1ère mi-temps</span>
+                            </div>
+                        </div>
+
+                        <!-- Équipe 2 -->
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.1rem;" id="opponentNameDisplay"></h3>
+                            <div style="font-size: 2.5rem; font-weight: bold; margin: 0.5rem 0;" id="scoreOpponent">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contrôles chrono -->
+                <div style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <button class="btn btn-primary" id="playPauseBtn" onclick="toggleTimer()">▶️ Démarrer</button>
+                    <button class="btn btn-warning" onclick="switchHalf()">🔄 Mi-temps</button>
+                    <button class="btn btn-secondary" onclick="resetMatch()">🔙 Reset</button>
+                    <button class="btn btn-danger" onclick="endMatch()">⏹️ Terminer</button>
+                </div>
+
+                <!-- Actions disponibles -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
+                    <button class="btn btn-action" onclick="recordAction('goal')">⚽ BUT</button>
+                    <button class="btn btn-action" onclick="recordAction('shot')">🎯 TIR</button>
+                    <button class="btn btn-action" onclick="recordAction('card')">🟨 CARTON</button>
+                    <button class="btn btn-action" onclick="recordAction('foul')">⚠️ FAUTE</button>
+                    <button class="btn btn-action" onclick="recordAction('save')">🧤 ARRÊT</button>
+                    <button class="btn btn-action" onclick="recordAction('substitution')">🔄 CHANGEMENT</button>
+                    <button class="btn btn-action" onclick="recordAction('freekick')">⚽ COUP FRANC</button>
+                </div>
+
+                <!-- Composition sur terrain -->
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h3>📋 Composition</h3>
+                    <div id="matchCompositionDisplay" style="text-align: center; color: #7f8c8d;">
+                        Aucune composition
+                    </div>
+                </div>
+
+                <!-- Timeline des événements -->
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px;">
+                    <h3>📅 Événements</h3>
+                    <div id="matchTimelineDisplay" style="max-height: 300px; overflow-y: auto;">
+                        <p style="text-align: center; color: #bdc3c7;">Aucun événement</p>
+                    </div>
+                </div>
+
+                <!-- Actions match -->
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;">
+                    <button class="btn btn-success" id="generateLiveBtn" onclick="generateLiveLink()">📺 Générer Live</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('matchSection').style.display='none'">✖️ Fermer</button>
+                </div>
+            </section>
+
+            <!-- Lien live (visible après génération) -->
+            <section id="liveSection" class="team-card" style="display: none;">
+                <h2>📺 Lien Live</h2>
+                <div style="display: grid; gap: 1rem;">
+                    <input type="text" id="liveLink" readonly style="padding: 0.75rem; border: 2px solid #3498db; border-radius: 6px;">
+                    <button class="btn btn-primary" onclick="copyLiveLink()">📋 Copier le lien</button>
+                    <p style="color: #7f8c8d; font-size: 0.9rem;">
+                        Partagez ce lien avec les spectateurs pour un suivi en direct
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts en bon ordre -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/storage.js"></script>
+    <script src="../js/supabase-sync.js"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/team-manager.js"></script>
+    <script src="../js/data-manager.js"></script>
+    <script src="../js/notification.js"></script>
+    
+    <script>
+        let currentMatchId = null;
+        let currentTeamId = null;
+        let timerInterval = null;
+        let matchTime = 0;
+        let isTimerRunning = false;
+        let currentHalf = 1;
+        let matchScore = { team: 0, opponent: 0 };
+        let matchEvents = [];
+        let matchComposition = [];
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTeamSelector();
+            loadSavedComposition();
+        });
+
+        // ===== CONFIGURATION MATCH =====
+
+        function updateTeamSelector() {
+            const selector = document.getElementById('matchTeamSelector');
+            const teams = window.teamManager.getAllTeams();
+            
+            selector.innerHTML = '<option value="">-- Sélectionner une équipe --</option>';
+            teams.forEach(team => {
+                const option = document.createElement('option');
+                option.value = team.id;
+                option.textContent = `${team.name}${team.category ? ' - ' + team.category : ''}`;
+                selector.appendChild(option);
+            });
+        }
+
+        function loadSavedComposition() {
+            const saved = localStorage.getItem('footballStats_composition');
+            if (saved) {
+                const comp = JSON.parse(saved);
+                matchComposition = comp.players || [];
+            }
+        }
+
+        function startMatch() {
+            const teamId = document.getElementById('matchTeamSelector').value;
+            const opponentName = document.getElementById('matchOpponentName').value.trim();
+            const venue = document.getElementById('matchVenue').value.trim();
+
+            if (!teamId || !opponentName) {
+                showNotification('Veuillez remplir tous les champs obligatoires', 'warning');
+                return;
+            }
+
+            const team = window.teamManager.getTeam(teamId);
+            currentTeamId = teamId;
+            currentMatchId = 'match_' + Date.now();
+            matchTime = 0;
+            matchScore = { team: 0, opponent: 0 };
+            matchEvents = [];
+
+            // Affichage
+            document.getElementById('displayTeamName').textContent = team.name;
+            document.getElementById('displayOpponentName').textContent = opponentName;
+            document.getElementById('teamNameDisplay').textContent = team.name;
+            document.getElementById('opponentNameDisplay').textContent = opponentName;
+
+            document.getElementById('setupSection').style.display = 'none';
+            document.getElementById('matchSection').style.display = 'block';
+
+            // Créer le match sur Supabase
+            if (window.supabaseSync && window.supabaseSync.isReady()) {
+                window.supabaseSync.createMatchRemote({
+                    id: currentMatchId,
+                    team_id: teamId,
+                    opponent_name: opponentName,
+                    venue: venue,
+                    match_date: new Date().toISOString()
+                });
+            }
+
+            showNotification('✅ Match démarré !', 'success');
+            updateMatchDisplay();
+        }
+
+        // ===== GESTION CHRONOMÈTRE =====
+
+        function toggleTimer() {
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                document.getElementById('playPauseBtn').textContent = '▶️ Reprendre';
+            } else {
+                timerInterval = setInterval(() => {
+                    matchTime++;
+                    updateTimeDisplay();
+                    syncMatchToSupabase();
+                }, 1000);
+                document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
+            }
+            isTimerRunning = !isTimerRunning;
+        }
+
+        function switchHalf() {
+            if (currentHalf === 1) {
+                currentHalf = 2;
+                matchTime = 0;
+            } else {
+                currentHalf = 1;
+                matchTime = 0;
+            }
+            updateTimeDisplay();
+            showNotification(currentHalf === 2 ? '🔄 Début 2ème mi-temps' : '🔄 Retour 1ère mi-temps', 'info');
+        }
+
+        function resetMatch() {
+            if (confirm('⚠️ Réinitialiser le match ?')) {
+                matchTime = 0;
+                currentHalf = 1;
+                matchScore = { team: 0, opponent: 0 };
+                matchEvents = [];
+                updateTimeDisplay();
+                updateEventsList();
+                showNotification('🔄 Match réinitialisé', 'info');
+            }
+        }
+
+        function endMatch() {
+            if (confirm('⚠️ Terminer le match ?')) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                
+                // Sauvegarder définitivement
+                syncMatchToSupabase();
+                
+                showNotification('✅ Match terminé', 'success');
+                document.getElementById('matchSection').style.display = 'none';
+                document.getElementById('setupSection').style.display = 'block';
+            }
+        }
+
+        function updateTimeDisplay() {
+            const minutes = Math.floor(matchTime / 60);
+            const seconds = matchTime % 60;
+            document.getElementById('matchMinutes').textContent = String(minutes).padStart(2, '0');
+            document.getElementById('matchSeconds').textContent = String(seconds).padStart(2, '0');
+            document.getElementById('halfDisplay').textContent = currentHalf === 1 ? '1ère mi-temps' : '2ème mi-temps';
+        }
+
+        // ===== GESTION ÉVÉNEMENTS =====
+
+        function recordAction(actionType) {
+            const team = window.teamManager.getTeam(currentTeamId);
+            
+            if (actionType === 'goal') {
+                selectPlayerForAction(actionType, team.players, 'But');
+            } else if (actionType === 'shot') {
+                selectPlayerForAction(actionType, team.players, 'Tir');
+            } else if (actionType === 'card') {
+                selectCardType();
+            } else if (actionType === 'substitution') {
+                selectPlayersForSubstitution(team.players);
+            } else {
+                selectPlayerForAction(actionType, team.players, actionType);
+            }
+        }
+
+        function selectPlayerForAction(actionType, players, label) {
+            // Créer une modale simple
+            let playerList = players.map(p => 
+                `<button onclick="confirmAction('${actionType}', '${p.id}', '${p.name}')" class="btn btn-small" style="margin: 0.25rem;">
+                    ${p.name} (${p.position})
+                </button>`
+            ).join('');
+
+            alert(`Sélectionnez une joueuse pour: ${label}\n\n${playerList}`);
+        }
+
+        function selectCardType() {
+            const types = ['🟨 Carton jaune', '🔴 Carton rouge', '⚪ Carton blanc'];
+            const selected = prompt('Type de carton ?\n1. Jaune\n2. Rouge\n3. Blanc');
+            if (selected) {
+                const team = window.teamManager.getTeam(currentTeamId);
+                selectPlayerForAction('card', team.players, types[selected - 1] || 'Carton');
+            }
+        }
+
+        function selectPlayersForSubstitution(players) {
+            const sortant = prompt('Numéro du joueur sortant (1-11):');
+            const entrant = prompt('Numéro du joueur entrant (12-18):');
+            
+            if (sortant && entrant) {
+                confirmAction('substitution', sortant + '-' + entrant, 'Changement');
+            }
+        }
+
+        function confirmAction(actionType, playerId, playerName) {
+            const event = {
+                id: 'evt_' + Date.now(),
+                type: actionType,
+                player_id: playerId,
+                player_name: playerName,
+                minute: Math.floor(matchTime / 60),
+                half: currentHalf,
+                timestamp: new Date().toISOString()
+            };
+
+            // Mettre à jour le score si but
+            if (actionType === 'goal') {
+                matchScore.team++;
+                document.getElementById('scoreTeam').textContent = matchScore.team;
+            }
+
+            matchEvents.push(event);
+            updateEventsList();
+            syncMatchToSupabase();
+
+            showNotification(`✅ ${playerName} - ${actionType}`, 'success');
+        }
+
+        function updateEventsList() {
+            const container = document.getElementById('matchTimelineDisplay');
+            if (matchEvents.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #bdc3c7;">Aucun événement</p>';
+                return;
+            }
+
+            container.innerHTML = matchEvents.map(evt => `
+                <div style="padding: 0.75rem; border-bottom: 1px solid #ecf0f1;">
+                    <strong>${evt.minute}'</strong> - ${evt.player_name} (${evt.type})
+                </div>
+            `).join('');
+        }
+
+        // ===== SYNCHRONISATION SUPABASE =====
+
+        function syncMatchToSupabase() {
+            if (!window.supabaseSync || !window.supabaseSync.isReady()) return;
+
+            // Mettre à jour le match
+            window.supabaseSync.updateMatchRemote({
+                id: currentMatchId,
+                team_id: currentTeamId,
+                score_team: matchScore.team,
+                score_opponent: matchScore.opponent,
+                half: currentHalf,
+                match_time: matchTime,
+                status: 'in_progress'
+            });
+
+            // Enregistrer les événements
+            matchEvents.forEach(evt => {
+                window.supabaseSync.recordEventRemote({
+                    match_id: currentMatchId,
+                    team_id: currentTeamId,
+                    player_id: evt.player_id,
+                    event_type: evt.type,
+                    match_minute: evt.minute,
+                    half: evt.half,
+                    is_team_event: true
+                });
+            });
+        }
+
+        function updateMatchDisplay() {
+            updateTimeDisplay();
+            updateEventsList();
+            document.getElementById('scoreTeam').textContent = matchScore.team;
+            document.getElementById('scoreOpponent').textContent = matchScore.opponent;
+        }
+
+        // ===== LIVE =====
+
+        function generateLiveLink() {
+            const link = `${window.location.origin}${window.location.pathname}?match=${currentMatchId}`;
+            document.getElementById('liveLink').value = link;
+            document.getElementById('liveSection').style.display = 'block';
+            showNotification('✅ Lien live généré', 'success');
+        }
+
+        function copyLiveLink() {
+            const input = document.getElementById('liveLink');
+            input.select();
+            document.execCommand('copy');
+            showNotification('📋 Lien copié !', 'success');
+        }
+
+        function showNotification(message, type = 'info') {
+            if (typeof window.NotificationManager !== 'undefined') {
+                window.NotificationManager.show(message, type);
+            } else {
+                console.log(`[${type}] ${message}`);
+                alert(message);
+            }
+        }
+    </script>
+</body>
+</html>

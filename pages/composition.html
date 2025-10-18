@@ -3,102 +3,332 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Composition - Football Stats</title>
+    <title>📋 Composition - Football Stats Manager</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1>📋 Composition de Départ</h1>
-            <p>Sélectionnez vos 11 titulaires pour le match</p>
+            <h1>📋 Composition d'Équipe</h1>
+            <p>Sélectionnez votre 11 titulaires</p>
         </header>
 
         <!-- Navigation -->
         <nav class="nav-tabs">
             <a href="../index.html" class="nav-link">🏠 Accueil</a>
-            <a href="team.html" class="nav-link">👥 Équipe</a>
+            <a href="teams.html" class="nav-link">👥 Équipes</a>
             <a href="composition.html" class="nav-link active">📋 Compo</a>
+            <a href="match.html" class="nav-link">⚽ Match</a>
+            <a href="live.html" class="nav-link">📺 Live</a>
             <a href="stats.html" class="nav-link">📊 Stats</a>
         </nav>
 
-        <!-- Contenu principal -->
         <main class="main-content">
-            <!-- Statut de la composition -->
-            <div class="team-card">
-                <h2>🎯 Statut de la Composition</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="selectedCount">0</div>
-                        <div class="stat-label">Joueuses Sélectionnées</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="goalkeepersSelected">0</div>
-                        <div class="stat-label">Gardiennes</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="defendersSelected">0</div>
-                        <div class="stat-label">Défenseuses</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="midfieldSelected">0</div>
-                        <div class="stat-label">Milieux</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="forwardsSelected">0</div>
-                        <div class="stat-label">Attaquantes</div>
-                    </div>
+            <!-- Sélection de l'équipe -->
+            <section class="team-card">
+                <h2>🎯 Sélectionner une Équipe</h2>
+                <div class="form-group">
+                    <label for="teamSelector">Équipe/Catégorie *</label>
+                    <select id="teamSelector" required>
+                        <option value="">-- Sélectionner une équipe --</option>
+                    </select>
                 </div>
-                <p id="compositionStatus" style="text-align: center; margin-top: 15px; font-size: 1.1em;">
-                    ⏳ Sélectionnez 11 joueuses
+                <p style="color: #7f8c8d; font-size: 0.9rem; margin-top: 1rem;">
+                    💡 Si vous n'avez pas d'équipe, allez d'abord à la page 👥 Équipes pour en créer une
                 </p>
-            </div>
+            </section>
 
-            <!-- Sélection des Joueuses -->
-            <div class="team-card">
-                <h2>👥 Sélectionnez vos 11 Titulaires</h2>
-                <p style="opacity: 0.8; font-size: 0.95em;">Cliquez sur une joueuse pour la sélectionner/désélectionner</p>
-                <div id="playerSelectionGrid" class="player-grid">
-                    <p style="text-align: center; opacity: 0.8;">Aucune joueuse disponible. Allez dans "Équipe" d'abord !</p>
+            <!-- Composition (visible après sélection) -->
+            <section id="compositionSection" class="team-card" style="display: none;">
+                <h2>⚽ Composition : <span id="selectedTeamDisplay"></span></h2>
+                
+                <!-- Statut composition -->
+                <div id="compositionStatus" style="background: #ecf0f1; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <p style="margin: 0; font-weight: bold;">Statut: <span id="statusText">Équipe incomplète</span></p>
                 </div>
-            </div>
 
-            <!-- Résumé Terrain/Banc -->
-            <div class="team-card">
-                <h2>🏟️ Résumé Composition</h2>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div>
-                        <h3 style="color: #27ae60; margin-bottom: 10px;">🟢 Sur le Terrain (11)</h3>
-                        <div id="fieldPlayers" style="background: rgba(39,174,96,0.1); padding: 15px; border-radius: 8px; min-height: 150px;">
-                            <p style="opacity: 0.7; text-align: center;">Aucune joueuse sélectionnée</p>
-                        </div>
+                <!-- Visualisation terrain -->
+                <div style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; aspect-ratio: 1 / 1.3; display: flex; flex-direction: column; justify-content: space-around;">
+                    <h3 style="color: white; margin: 0; text-align: center;">TERRAIN</h3>
+                    
+                    <!-- GK -->
+                    <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+                        <div id="fieldGK" class="field-position" style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px; color: white; text-align: center; min-width: 60px;">🥅</div>
                     </div>
-                    <div>
-                        <h3 style="color: #3498db; margin-bottom: 10px;">🔵 Sur le Banc</h3>
-                        <div id="benchPlayers" style="background: rgba(52,152,219,0.1); padding: 15px; border-radius: 8px; min-height: 150px;">
-                            <p style="opacity: 0.7; text-align: center;">Aucune joueuse sélectionnée</p>
-                        </div>
+                    
+                    <!-- Défense -->
+                    <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <div id="fieldDef" style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;"></div>
                     </div>
+                    
+                    <!-- Milieu -->
+                    <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <div id="fieldMid" style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;"></div>
+                    </div>
+                    
+                    <!-- Attaque -->
+                    <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <div id="fieldAtt" style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;"></div>
+                    </div>
+                    
+                    <h3 style="color: white; margin: 0; text-align: center;">ADVERSAIRE</h3>
                 </div>
-            </div>
 
-            <!-- Actions -->
-            <div class="team-card">
-                <h2>⚙️ Actions</h2>
-                <button class="btn btn-success" onclick="compositionManager.saveComposition()" id="saveBtn" disabled>
-                    ✓ Valider la Composition
-                </button>
-                <button class="btn btn-warning" onclick="compositionManager.resetComposition()" style="margin-left: 10px;">
-                    🔄 Réinitialiser
-                </button>
-            </div>
+                <!-- Sélection des joueuses -->
+                <h3>👥 Sélectionnez 11 joueuses (1 gardienne + 10 de champ)</h3>
+                <div id="playersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
+                    <p style="grid-column: 1/-1; text-align: center; color: #bdc3c7;">Sélectionnez une équipe d'abord</p>
+                </div>
+
+                <!-- Banc -->
+                <h3>🪑 Remplaçants</h3>
+                <div id="benchList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
+                </div>
+
+                <!-- Actions -->
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; padding-top: 1.5rem; border-top: 1px solid #ecf0f1;">
+                    <button class="btn btn-success" id="validateBtn" disabled onclick="validateComposition()">✅ Valider la Composition</button>
+                    <button class="btn btn-warning" id="clearBtn" onclick="clearSelection()">🔄 Réinitialiser</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('compositionSection').style.display='none'">✖️ Fermer</button>
+                </div>
+            </section>
         </main>
     </div>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/storage.js"></script>
+    <script src="../js/supabase-sync.js"></script>
     <script src="../js/supabase-config.js"></script>
+    <script src="../js/team-manager.js"></script>
     <script src="../js/notification.js"></script>
-    <script src="../js/composition.js"></script>
+    
+    <script>
+        let selectedTeamId = null;
+        let selectedPlayers = [];
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTeamSelector();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('teamSelector').addEventListener('change', function(e) {
+                selectedTeamId = e.target.value;
+                selectedPlayers = [];
+                
+                if (selectedTeamId) {
+                    document.getElementById('selectedTeamDisplay').textContent = 
+                        window.teamManager.getTeam(selectedTeamId).name;
+                    document.getElementById('compositionSection').style.display = 'block';
+                    updatePlayersList();
+                    updateFieldDisplay();
+                } else {
+                    document.getElementById('compositionSection').style.display = 'none';
+                }
+            });
+        }
+
+        function updateTeamSelector() {
+            const selector = document.getElementById('teamSelector');
+            const teams = window.teamManager.getAllTeams();
+            
+            selector.innerHTML = '<option value="">-- Sélectionner une équipe --</option>';
+            teams.forEach(team => {
+                const option = document.createElement('option');
+                option.value = team.id;
+                option.textContent = `${team.name}${team.category ? ' - ' + team.category : ''}`;
+                selector.appendChild(option);
+            });
+        }
+
+        function updatePlayersList() {
+            if (!selectedTeamId) return;
+
+            const team = window.teamManager.getTeam(selectedTeamId);
+            const playersContainer = document.getElementById('playersList');
+            const benchContainer = document.getElementById('benchList');
+            
+            playersContainer.innerHTML = '';
+            benchContainer.innerHTML = '';
+
+            const positions = { gardienne: '🥅', défenseuse: '🛡️', milieu: '🎯', attaquante: '⚔️' };
+
+            team.players.forEach(player => {
+                const isSelected = selectedPlayers.includes(player.id);
+                const isBench = isSelected && selectedPlayers.indexOf(player.id) >= 11;
+
+                const btn = document.createElement('button');
+                btn.className = 'player-btn';
+                btn.style.cssText = `
+                    padding: 0.75rem;
+                    border: 2px solid #ecf0f1;
+                    border-radius: 6px;
+                    background: ${isSelected ? '#3498db' : '#f8f9fa'};
+                    color: ${isSelected ? 'white' : '#2c3e50'};
+                    cursor: pointer;
+                    font-weight: bold;
+                    transition: all 0.2s ease;
+                `;
+                btn.onmouseover = () => btn.style.transform = 'scale(1.05)';
+                btn.onmouseout = () => btn.style.transform = 'scale(1)';
+
+                btn.innerHTML = `
+                    <div style="font-size: 1rem; margin-bottom: 0.25rem;">${positions[player.position] || '⚽'}</div>
+                    <div style="font-size: 0.85rem; font-weight: bold;">${player.name}</div>
+                    <div style="font-size: 0.75rem; opacity: 0.9;">${player.position}${player.number ? ' N°' + player.number : ''}</div>
+                `;
+
+                btn.onclick = () => togglePlayer(player.id);
+
+                if (isSelected && !isBench) {
+                    playersContainer.appendChild(btn);
+                } else if (isBench) {
+                    benchContainer.appendChild(btn);
+                } else {
+                    playersContainer.appendChild(btn);
+                }
+            });
+
+            updateCompositionStatus();
+        }
+
+        function togglePlayer(playerId) {
+            const index = selectedPlayers.indexOf(playerId);
+            
+            if (index === -1) {
+                // Ajouter le joueur
+                if (selectedPlayers.length < 18) { // 11 titulaires + 7 remplaçants max
+                    selectedPlayers.push(playerId);
+                } else {
+                    showNotification('Maximum 18 joueuses (11 titulaires + 7 remplaçants)', 'warning');
+                    return;
+                }
+            } else {
+                // Retirer le joueur
+                selectedPlayers.splice(index, 1);
+            }
+
+            updatePlayersList();
+            updateFieldDisplay();
+        }
+
+        function updateFieldDisplay() {
+            const team = window.teamManager.getTeam(selectedTeamId);
+            
+            // Filtrer les 11 titulaires
+            const starters = selectedPlayers.slice(0, 11);
+            
+            const gk = starters.filter(id => {
+                const player = team.players.find(p => p.id === id);
+                return player?.position === 'gardienne';
+            });
+            
+            const def = starters.filter(id => {
+                const player = team.players.find(p => p.id === id);
+                return player?.position === 'défenseuse';
+            });
+            
+            const mid = starters.filter(id => {
+                const player = team.players.find(p => p.id === id);
+                return player?.position === 'milieu';
+            });
+            
+            const att = starters.filter(id => {
+                const player = team.players.find(p => p.id === id);
+                return player?.position === 'attaquante';
+            });
+
+            // Mettre à jour les conteneurs
+            updateFieldSection('fieldGK', gk, team);
+            updateFieldSection('fieldDef', def, team);
+            updateFieldSection('fieldMid', mid, team);
+            updateFieldSection('fieldAtt', att, team);
+        }
+
+        function updateFieldSection(containerId, playerIds, team) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            playerIds.forEach(id => {
+                const player = team.players.find(p => p.id === id);
+                const badge = document.createElement('div');
+                badge.style.cssText = `
+                    background: rgba(255,255,255,0.3);
+                    color: white;
+                    padding: 0.5rem 0.75rem;
+                    border-radius: 4px;
+                    font-size: 0.85rem;
+                    font-weight: bold;
+                `;
+                badge.textContent = player.number ? `${player.name} (${player.number})` : player.name;
+                container.appendChild(badge);
+            });
+        }
+
+        function updateCompositionStatus() {
+            const starters = selectedPlayers.slice(0, 11);
+            const team = window.teamManager.getTeam(selectedTeamId);
+
+            const gkCount = starters.filter(id => {
+                const player = team.players.find(p => p.id === id);
+                return player?.position === 'gardienne';
+            }).length;
+
+            const statusEl = document.getElementById('statusText');
+            const validateBtn = document.getElementById('validateBtn');
+
+            if (starters.length === 11 && gkCount === 1) {
+                statusEl.innerHTML = `✅ Composition complète (${starters.length}/11 - 1 GK)`;
+                statusEl.style.color = '#2ecc71';
+                validateBtn.disabled = false;
+                validateBtn.className = 'btn btn-success';
+            } else {
+                statusEl.innerHTML = `⚠️ Composition incomplète (${starters.length}/11${gkCount > 0 ? ` - ${gkCount} GK` : ''})`;
+                statusEl.style.color = '#f39c12';
+                validateBtn.disabled = true;
+                validateBtn.className = 'btn btn-secondary';
+            }
+        }
+
+        function validateComposition() {
+            const starters = selectedPlayers.slice(0, 11);
+            if (starters.length !== 11) {
+                showNotification('La composition doit avoir 11 joueuses', 'warning');
+                return;
+            }
+
+            // Sauvegarder la composition
+            const compositionData = {
+                teamId: selectedTeamId,
+                teamName: window.teamManager.getTeam(selectedTeamId).name,
+                players: starters,
+                createdAt: new Date().toISOString()
+            };
+
+            localStorage.setItem('footballStats_composition', JSON.stringify(compositionData));
+            showNotification('✅ Composition sauvegardée !', 'success');
+        }
+
+        function clearSelection() {
+            if (confirm('Êtes-vous sûr de vouloir réinitialiser la composition ?')) {
+                selectedPlayers = [];
+                updatePlayersList();
+                updateFieldDisplay();
+                showNotification('🔄 Composition réinitialisée', 'info');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            if (typeof window.NotificationManager !== 'undefined' && window.NotificationManager.show) {
+                window.NotificationManager.show(message, type);
+            } else {
+                console.log(`[${type.toUpperCase()}] ${message}`);
+                alert(message);
+            }
+        }
+    </script>
 </body>
 </html>
