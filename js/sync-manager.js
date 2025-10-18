@@ -74,7 +74,14 @@ class SyncManager {
             const matchData = await dataManager.getMatch(this.currentMatchId);
             const events = await dataManager.getMatchEvents(this.currentMatchId);
             const playerStats = await dataManager.getAllPlayerStats(this.currentMatchId);
-            const opponentStats = await dataManager.getOpponentStats(this.currentMatchId);
+            
+            // Stats adversaire - ne pas bloquer si indisponible
+            let opponentStats = null;
+            try {
+                opponentStats = await dataManager.getOpponentStats(this.currentMatchId);
+            } catch (error) {
+                console.warn('⚠️ Stats adversaire non disponibles (non-bloquant)');
+            }
 
             if (!matchData) {
                 console.error('❌ Match non trouvé');

@@ -434,14 +434,18 @@ class DataManager {
                 .from('opponent_stats')
                 .select('*')
                 .eq('match_id', matchId)
-                .single();
+                .maybeSingle();
 
-            if (error && error.code !== 'PGRST116') throw error;
+            if (error) {
+                // Si la table n'existe pas ou autre erreur, retourner null gracieusement
+                console.warn('⚠️ Stats adversaire non disponibles :', error.message);
+                return null;
+            }
 
             return data || null;
 
         } catch (error) {
-            console.error('❌ Erreur récupération stats adversaire :', error);
+            console.warn('⚠️ Erreur récupération stats adversaire (non-bloquant) :', error);
             return null;
         }
     }
