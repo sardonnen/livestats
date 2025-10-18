@@ -5,35 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Composition - Football Stats</title>
     <link rel="stylesheet" href="../css/style.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>âš½</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1>ðŸ“‹ Composition de DÃ©part</h1>
-            <p>SÃ©lectionnez vos 11 titulaires pour le match</p>
+            <h1>📋 Composition de Départ</h1>
+            <p>Sélectionnez vos 11 titulaires pour le match</p>
         </header>
 
         <!-- Navigation -->
         <nav class="nav-tabs">
-            <a href="../index.html" class="nav-link">ðŸ  Accueil</a>
-            <a href="team.html" class="nav-link">ðŸ‘¥ Ã‰quipe</a>
-            <a href="composition.html" class="nav-link active">ðŸ“‹ Compo</a>
-            <a href="match.html" class="nav-link">âš½ Match</a>
-            <a href="live.html" class="nav-link">ðŸ“º Live</a>
-            <a href="stats.html" class="nav-link">ðŸ“Š Stats</a>
+            <a href="../index.html" class="nav-link">🏠 Accueil</a>
+            <a href="team.html" class="nav-link">👥 Équipe</a>
+            <a href="composition.html" class="nav-link active">📋 Compo</a>
+            <a href="stats.html" class="nav-link">📊 Stats</a>
         </nav>
 
         <!-- Contenu principal -->
         <main class="main-content">
-            
             <!-- Statut de la composition -->
             <div class="team-card">
-                <h2>ðŸŽ¯ Statut de la Composition</h2>
+                <h2>🎯 Statut de la Composition</h2>
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-value" id="selectedCount">0</div>
-                        <div class="stat-label">Joueuses SÃ©lectionnÃ©es</div>
+                        <div class="stat-label">Joueuses Sélectionnées</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value" id="goalkeepersSelected">0</div>
@@ -41,914 +38,67 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-value" id="defendersSelected">0</div>
-                        <div class="stat-label">DÃ©fenseuses</div>
+                        <div class="stat-label">Défenseuses</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="midfieldersSelected">0</div>
+                        <div class="stat-value" id="midfieldSelected">0</div>
                         <div class="stat-label">Milieux</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="attackersSelected">0</div>
+                        <div class="stat-value" id="forwardsSelected">0</div>
                         <div class="stat-label">Attaquantes</div>
                     </div>
                 </div>
-                
-                <div style="text-align: center; margin-top: 20px;">
-                    <div id="compositionStatus" class="composition-status">
-                        <span class="status-icon">âš ï¸</span>
-                        <span class="status-text">SÃ©lectionnez 11 joueuses avec au moins 1 gardienne</span>
+                <p id="compositionStatus" style="text-align: center; margin-top: 15px; font-size: 1.1em;">
+                    ⏳ Sélectionnez 11 joueuses
+                </p>
+            </div>
+
+            <!-- Sélection des Joueuses -->
+            <div class="team-card">
+                <h2>👥 Sélectionnez vos 11 Titulaires</h2>
+                <p style="opacity: 0.8; font-size: 0.95em;">Cliquez sur une joueuse pour la sélectionner/désélectionner</p>
+                <div id="playerSelectionGrid" class="player-grid">
+                    <p style="text-align: center; opacity: 0.8;">Aucune joueuse disponible. Allez dans "Équipe" d'abord !</p>
+                </div>
+            </div>
+
+            <!-- Résumé Terrain/Banc -->
+            <div class="team-card">
+                <h2>🏟️ Résumé Composition</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="color: #27ae60; margin-bottom: 10px;">🟢 Sur le Terrain (11)</h3>
+                        <div id="fieldPlayers" style="background: rgba(39,174,96,0.1); padding: 15px; border-radius: 8px; min-height: 150px;">
+                            <p style="opacity: 0.7; text-align: center;">Aucune joueuse sélectionnée</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="color: #3498db; margin-bottom: 10px;">🔵 Sur le Banc</h3>
+                        <div id="benchPlayers" style="background: rgba(52,152,219,0.1); padding: 15px; border-radius: 8px; min-height: 150px;">
+                            <p style="opacity: 0.7; text-align: center;">Aucune joueuse sélectionnée</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- SÃ©lection des joueuses -->
+            <!-- Actions -->
             <div class="team-card">
-                <h2>ðŸ‘¥ SÃ©lection des Joueuses</h2>
-                <p>Cliquez sur les joueuses pour les ajouter/retirer de la composition de dÃ©part :</p>
-                
-                <div id="playersSelectionGrid" class="player-grid">
-                    <!-- Les joueuses apparaÃ®tront ici -->
-                </div>
-                
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn btn-secondary" onclick="clearSelection()">ðŸ”„ Tout DÃ©sÃ©lectionner</button>
-                    <button class="btn btn-warning" onclick="autoSelectComposition()">ðŸŽ² SÃ©lection Auto</button>
-                    <button class="btn btn-primary" id="validateBtn" onclick="validateComposition()" disabled>
-                        âœ… Valider la Composition
-                    </button>
-                </div>
-            </div>
-
-            <!-- AperÃ§u de la composition -->
-            <div class="team-card">
-                <h2>ðŸŸï¸ AperÃ§u de la Composition</h2>
-                
-                <!-- Formation visuelle -->
-                <div class="formation-display">
-                    <div class="field">
-                        <!-- Gardienne -->
-                        <div class="field-line goalkeeper-line">
-                            <div class="field-position" id="gk-position">
-                                <div class="position-label">Gardienne</div>
-                                <div class="players-in-position" id="gk-players"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- DÃ©fense -->
-                        <div class="field-line defense-line">
-                            <div class="field-position" id="def-position">
-                                <div class="position-label">DÃ©fense</div>
-                                <div class="players-in-position" id="def-players"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Milieu -->
-                        <div class="field-line midfield-line">
-                            <div class="field-position" id="mid-position">
-                                <div class="position-label">Milieu</div>
-                                <div class="players-in-position" id="mid-players"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Attaque -->
-                        <div class="field-line attack-line">
-                            <div class="field-position" id="att-position">
-                                <div class="position-label">Attaque</div>
-                                <div class="players-in-position" id="att-players"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Liste des titulaires -->
-                <div class="starting-eleven-list">
-                    <h3>ðŸ“ 11 de DÃ©part</h3>
-                    <div id="startingElevenList" class="players-list">
-                        <p>Aucune joueuse sÃ©lectionnÃ©e</p>
-                    </div>
-                </div>
-                
-                <!-- Banc de touche -->
-                <div class="bench-list">
-                    <h3>ðŸª‘ Banc de Touche</h3>
-                    <div id="benchList" class="players-list">
-                        <p>Aucune joueuse sur le banc</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Formations prÃ©dÃ©finies -->
-            <div class="team-card">
-                <h2>âš™ï¸ Formations PrÃ©dÃ©finies</h2>
-                <p>SÃ©lectionnez une formation classique :</p>
-                
-                <div class="formations-grid">
-                    <button class="formation-btn" onclick="applyFormation('4-4-2')">
-                        <div class="formation-name">4-4-2</div>
-                        <div class="formation-desc">Ã‰quilibrÃ©e</div>
-                    </button>
-                    <button class="formation-btn" onclick="applyFormation('4-3-3')">
-                        <div class="formation-name">4-3-3</div>
-                        <div class="formation-desc">Offensive</div>
-                    </button>
-                    <button class="formation-btn" onclick="applyFormation('3-5-2')">
-                        <div class="formation-name">3-5-2</div>
-                        <div class="formation-desc">Milieu renforcÃ©</div>
-                    </button>
-                    <button class="formation-btn" onclick="applyFormation('5-3-2')">
-                        <div class="formation-name">5-3-2</div>
-                        <div class="formation-desc">DÃ©fensive</div>
-                    </button>
-                </div>
+                <h2>⚙️ Actions</h2>
+                <button class="btn btn-success" onclick="compositionManager.saveComposition()" id="saveBtn" disabled>
+                    ✓ Valider la Composition
+                </button>
+                <button class="btn btn-warning" onclick="compositionManager.resetComposition()" style="margin-left: 10px;">
+                    🔄 Réinitialiser
+                </button>
             </div>
         </main>
     </div>
 
-    <!-- Modal Validation -->
-    <div id="validationModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeValidationModal()">&times;</span>
-            <h3>âœ… Composition ValidÃ©e</h3>
-            <p>Votre composition de dÃ©part a Ã©tÃ© validÃ©e avec succÃ¨s !</p>
-            
-            <div id="validatedComposition" style="margin: 20px 0;">
-                <!-- RÃ©sumÃ© de la composition -->
-            </div>
-            
-            <div class="modal-actions">
-                <button class="btn btn-primary" onclick="goToMatch()">âš½ Aller au Match</button>
-                <button class="btn btn-secondary" onclick="closeValidationModal()">ðŸ“ Continuer l'Ã‰dition</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Scripts -->
-    <script src="../js/storage.js"></script>
-    <script src="../js/app.js"></script>
-    <script>
-        // Variables locales
-        let selectedPlayers = [];
-
-        // Initialisation de la page
-        document.addEventListener('DOMContentLoaded', function() {
-            loadCurrentComposition();
-            updatePlayersSelectionDisplay();
-            updateCompositionStats();
-            updateFormationDisplay();
-        });
-
-        /**
-         * Chargement de la composition actuelle
-         */
-        function loadCurrentComposition() {
-            const players = footballApp.getState().players;
-            selectedPlayers = players.filter(p => p.status === 'field').map(p => p.id);
-            console.log('Composition chargÃ©e:', selectedPlayers);
-        }
-
-        /**
-         * Mise Ã  jour de l'affichage de sÃ©lection
-         */
-        function updatePlayersSelectionDisplay() {
-            const container = document.getElementById('playersSelectionGrid');
-            const players = footballApp.getState().players;
-
-            if (players.length === 0) {
-                container.innerHTML = '<p class="text-center">Aucune joueuse disponible. <a href="team.html">CrÃ©ez votre Ã©quipe d\'abord</a>.</p>';
-                return;
-            }
-
-            container.innerHTML = '';
-
-            // Regrouper par position
-            const positions = ['gardienne', 'dÃ©fenseuse', 'milieu', 'attaquante'];
-            
-            positions.forEach(position => {
-                const positionPlayers = players.filter(p => p.position === position);
-                
-                if (positionPlayers.length > 0) {
-                    // Titre de position
-                    const positionTitle = document.createElement('div');
-                    positionTitle.className = 'position-section-title';
-                    positionTitle.innerHTML = `
-                        <h3 style="grid-column: 1 / -1; margin: 20px 0 10px; color: var(--warning-color);">
-                            ${footballApp.getPositionIcon(position)} ${position.charAt(0).toUpperCase() + position.slice(1)}s
-                        </h3>
-                    `;
-                    container.appendChild(positionTitle);
-                    
-                    // Joueuses de cette position
-                    positionPlayers.forEach(player => {
-                        const playerCard = createSelectablePlayerCard(player);
-                        container.appendChild(playerCard);
-                    });
-                }
-            });
-        }
-
-        /**
-         * CrÃ©ation d'une carte joueuse sÃ©lectionnable
-         */
-        function createSelectablePlayerCard(player) {
-            const isSelected = selectedPlayers.includes(player.id);
-            const isDisabled = player.status === 'sanctioned';
-            
-            const card = document.createElement('div');
-            card.className = `player-btn ${player.position === 'gardienne' ? 'goalkeeper' : ''} ${isSelected ? 'selected' : ''} ${isDisabled ? 'sanctioned' : ''}`;
-            
-            if (isDisabled) {
-                card.style.opacity = '0.5';
-                card.style.cursor = 'not-allowed';
-            } else {
-                card.onclick = () => togglePlayerSelection(player.id);
-            }
-
-            card.innerHTML = `
-                <div style="font-size: 1.5em;">${footballApp.getPositionIcon(player.position)}</div>
-                <div style="font-weight: bold; margin: 5px 0;">${player.name}</div>
-                ${player.number ? `<div style="font-size: 12px; color: var(--warning-color);">NÂ° ${player.number}</div>` : ''}
-                <div style="font-size: 11px; margin: 5px 0;">
-                    ${isSelected ? 'âœ… Titulaire' : isDisabled ? 'âš ï¸ SanctionnÃ©e' : 'ðŸª‘ Disponible'}
-                </div>
-                <div style="font-size: 10px; opacity: 0.8;">
-                    âš½ ${player.stats.goals} | ðŸŽ¯ ${player.stats.shots}
-                </div>
-            `;
-
-            return card;
-        }
-
-        /**
-         * Basculer la sÃ©lection d'une joueuse
-         */
-        function togglePlayerSelection(playerId) {
-            const player = footballApp.getState().players.find(p => p.id === playerId);
-            
-            if (!player || player.status === 'sanctioned') {
-                return;
-            }
-
-            const isSelected = selectedPlayers.includes(playerId);
-            
-            if (isSelected) {
-                // Retirer de la sÃ©lection
-                selectedPlayers = selectedPlayers.filter(id => id !== playerId);
-                footballApp.updatePlayerStatus(playerId, 'bench');
-            } else {
-                // Ajouter Ã  la sÃ©lection
-                if (selectedPlayers.length >= 11) {
-                    showNotification('Vous avez dÃ©jÃ  sÃ©lectionnÃ© 11 joueuses', 'warning');
-                    return;
-                }
-                
-                // VÃ©rifier qu'il n'y ait qu'une seule gardienne
-                if (player.position === 'gardienne') {
-                    const selectedGoalkeepers = selectedPlayers.filter(id => {
-                        const p = footballApp.getState().players.find(pl => pl.id === id);
-                        return p && p.position === 'gardienne';
-                    });
-                    
-                    if (selectedGoalkeepers.length > 0) {
-                        showNotification('Il ne peut y avoir qu\'une seule gardienne titulaire', 'warning');
-                        return;
-                    }
-                }
-                
-                selectedPlayers.push(playerId);
-                footballApp.updatePlayerStatus(playerId, 'field');
-            }
-
-            updatePlayersSelectionDisplay();
-            updateCompositionStats();
-            updateFormationDisplay();
-            updateValidationButton();
-            
-            console.log('SÃ©lection mise Ã  jour:', selectedPlayers);
-        }
-
-        /**
-         * Mise Ã  jour des statistiques de composition
-         */
-        function updateCompositionStats() {
-            const players = footballApp.getState().players;
-            const selected = selectedPlayers.map(id => players.find(p => p.id === id)).filter(Boolean);
-            
-            document.getElementById('selectedCount').textContent = selected.length;
-            document.getElementById('goalkeepersSelected').textContent = selected.filter(p => p.position === 'gardienne').length;
-            document.getElementById('defendersSelected').textContent = selected.filter(p => p.position === 'dÃ©fenseuse').length;
-            document.getElementById('midfieldersSelected').textContent = selected.filter(p => p.position === 'milieu').length;
-            document.getElementById('attackersSelected').textContent = selected.filter(p => p.position === 'attaquante').length;
-            
-            // Mise Ã  jour du statut
-            updateCompositionStatus(selected);
-        }
-
-        /**
-         * Mise Ã  jour du statut de composition
-         */
-        function updateCompositionStatus(selected) {
-            const statusEl = document.getElementById('compositionStatus');
-            const goalkeepers = selected.filter(p => p.position === 'gardienne').length;
-            
-            if (selected.length === 0) {
-                statusEl.innerHTML = '<span class="status-icon">âš ï¸</span><span class="status-text">Aucune joueuse sÃ©lectionnÃ©e</span>';
-                statusEl.className = 'composition-status warning';
-            } else if (selected.length < 11) {
-                statusEl.innerHTML = `<span class="status-icon">âš ï¸</span><span class="status-text">Il manque ${11 - selected.length} joueuse(s)</span>`;
-                statusEl.className = 'composition-status warning';
-            } else if (selected.length === 11 && goalkeepers === 0) {
-                statusEl.innerHTML = '<span class="status-icon">âŒ</span><span class="status-text">Aucune gardienne sÃ©lectionnÃ©e</span>';
-                statusEl.className = 'composition-status error';
-            } else if (selected.length === 11 && goalkeepers === 1) {
-                statusEl.innerHTML = '<span class="status-icon">âœ…</span><span class="status-text">Composition valide et prÃªte !</span>';
-                statusEl.className = 'composition-status success';
-            } else {
-                statusEl.innerHTML = '<span class="status-icon">âŒ</span><span class="status-text">Trop de joueuses sÃ©lectionnÃ©es</span>';
-                statusEl.className = 'composition-status error';
-            }
-        }
-
-        /**
-         * Mise Ã  jour de l'affichage de formation
-         */
-        function updateFormationDisplay() {
-            const players = footballApp.getState().players;
-            const selected = selectedPlayers.map(id => players.find(p => p.id === id)).filter(Boolean);
-            
-            // RÃ©partir par position
-            const positions = {
-                gardienne: selected.filter(p => p.position === 'gardienne'),
-                dÃ©fenseuse: selected.filter(p => p.position === 'dÃ©fenseuse'),
-                milieu: selected.filter(p => p.position === 'milieu'),
-                attaquante: selected.filter(p => p.position === 'attaquante')
-            };
-
-            // Mettre Ã  jour l'affichage visuel
-            updatePositionDisplay('gk', positions.gardienne);
-            updatePositionDisplay('def', positions.dÃ©fenseuse);
-            updatePositionDisplay('mid', positions.milieu);
-            updatePositionDisplay('att', positions.attaquante);
-            
-            // Mettre Ã  jour les listes
-            updateStartingElevenList(selected);
-            updateBenchList();
-        }
-
-        /**
-         * Mise Ã  jour de l'affichage d'une position
-         */
-        function updatePositionDisplay(position, players) {
-            const container = document.getElementById(`${position}-players`);
-            
-            if (players.length === 0) {
-                container.innerHTML = '<div class="empty-position">Aucune joueuse</div>';
-                return;
-            }
-
-            container.innerHTML = '';
-            players.forEach(player => {
-                const playerEl = document.createElement('div');
-                playerEl.className = 'field-player';
-                playerEl.innerHTML = `
-                    <div class="player-name">${player.name}</div>
-                    ${player.number ? `<div class="player-number">${player.number}</div>` : ''}
-                `;
-                container.appendChild(playerEl);
-            });
-        }
-
-        /**
-         * Mise Ã  jour de la liste des titulaires
-         */
-        function updateStartingElevenList(selected) {
-            const container = document.getElementById('startingElevenList');
-            
-            if (selected.length === 0) {
-                container.innerHTML = '<p>Aucune joueuse sÃ©lectionnÃ©e</p>';
-                return;
-            }
-
-            container.innerHTML = '';
-            
-            // Regrouper par position
-            const positions = ['gardienne', 'dÃ©fenseuse', 'milieu', 'attaquante'];
-            
-            positions.forEach(position => {
-                const positionPlayers = selected.filter(p => p.position === position);
-                
-                if (positionPlayers.length > 0) {
-                    const positionDiv = document.createElement('div');
-                    positionDiv.className = 'position-group';
-                    positionDiv.innerHTML = `
-                        <h4>${footballApp.getPositionIcon(position)} ${position.charAt(0).toUpperCase() + position.slice(1)}s (${positionPlayers.length})</h4>
-                        <ul>
-                            ${positionPlayers.map(p => `<li>${p.name}${p.number ? ` (${p.number})` : ''}</li>`).join('')}
-                        </ul>
-                    `;
-                    container.appendChild(positionDiv);
-                }
-            });
-        }
-
-        /**
-         * Mise Ã  jour de la liste du banc
-         */
-        function updateBenchList() {
-            const container = document.getElementById('benchList');
-            const players = footballApp.getState().players;
-            const benchPlayers = players.filter(p => p.status === 'bench' && !selectedPlayers.includes(p.id));
-            
-            if (benchPlayers.length === 0) {
-                container.innerHTML = '<p>Aucune joueuse sur le banc</p>';
-                return;
-            }
-
-            container.innerHTML = '';
-            const benchList = document.createElement('ul');
-            
-            benchPlayers.forEach(player => {
-                const li = document.createElement('li');
-                li.innerHTML = `${footballApp.getPositionIcon(player.position)} ${player.name}${player.number ? ` (${player.number})` : ''}`;
-                benchList.appendChild(li);
-            });
-            
-            container.appendChild(benchList);
-        }
-
-        /**
-         * Mise Ã  jour du bouton de validation
-         */
-        function updateValidationButton() {
-            const btn = document.getElementById('validateBtn');
-            const players = footballApp.getState().players;
-            const selected = selectedPlayers.map(id => players.find(p => p.id === id)).filter(Boolean);
-            const goalkeepers = selected.filter(p => p.position === 'gardienne').length;
-            
-            const isValid = selected.length === 11 && goalkeepers === 1;
-            btn.disabled = !isValid;
-            
-            if (isValid) {
-                btn.className = 'btn btn-success';
-                btn.innerHTML = 'âœ… Valider la Composition';
-            } else {
-                btn.className = 'btn btn-primary';
-                btn.innerHTML = 'âš ï¸ Composition IncomplÃ¨te';
-            }
-        }
-
-        /**
-         * Effacer la sÃ©lection
-         */
-        function clearSelection() {
-            if (selectedPlayers.length === 0) {
-                showNotification('Aucune joueuse Ã  dÃ©sÃ©lectionner', 'info');
-                return;
-            }
-
-            if (confirm('DÃ©sÃ©lectionner toutes les joueuses ?')) {
-                selectedPlayers.forEach(playerId => {
-                    footballApp.updatePlayerStatus(playerId, 'bench');
-                });
-                
-                selectedPlayers = [];
-                
-                updatePlayersSelectionDisplay();
-                updateCompositionStats();
-                updateFormationDisplay();
-                updateValidationButton();
-                
-                showNotification('SÃ©lection effacÃ©e');
-            }
-        }
-
-        /**
-         * SÃ©lection automatique
-         */
-        function autoSelectComposition() {
-            const players = footballApp.getState().players;
-            const availablePlayers = players.filter(p => p.status !== 'sanctioned');
-            
-            if (availablePlayers.length < 11) {
-                showNotification(`Il faut au moins 11 joueuses disponibles (${availablePlayers.length} actuellement)`, 'error');
-                return;
-            }
-
-            const goalkeepers = availablePlayers.filter(p => p.position === 'gardienne');
-            if (goalkeepers.length === 0) {
-                showNotification('Aucune gardienne disponible', 'error');
-                return;
-            }
-
-            if (confirm('SÃ©lectionner automatiquement une composition Ã©quilibrÃ©e ?')) {
-                // Effacer la sÃ©lection actuelle
-                selectedPlayers.forEach(playerId => {
-                    footballApp.updatePlayerStatus(playerId, 'bench');
-                });
-                selectedPlayers = [];
-
-                // SÃ©lection automatique
-                const selected = [];
-
-                // 1 gardienne
-                selected.push(goalkeepers[0]);
-
-                // Autres positions
-                const fieldPlayers = availablePlayers.filter(p => p.position !== 'gardienne');
-                const positions = ['dÃ©fenseuse', 'milieu', 'attaquante'];
-                
-                // RÃ©partition Ã©quilibrÃ©e: 4 dÃ©fenseuses, 3 milieux, 3 attaquantes
-                const distribution = { dÃ©fenseuse: 4, milieu: 3, attaquante: 3 };
-                
-                positions.forEach(position => {
-                    const positionPlayers = fieldPlayers.filter(p => p.position === position);
-                    const needed = distribution[position];
-                    
-                    for (let i = 0; i < Math.min(needed, positionPlayers.length); i++) {
-                        if (selected.length < 11) {
-                            selected.push(positionPlayers[i]);
-                        }
-                    }
-                });
-
-                // ComplÃ©ter si nÃ©cessaire
-                while (selected.length < 11 && fieldPlayers.length > 0) {
-                    const remaining = fieldPlayers.filter(p => !selected.includes(p));
-                    if (remaining.length > 0) {
-                        selected.push(remaining[0]);
-                    } else {
-                        break;
-                    }
-                }
-
-                // Appliquer la sÃ©lection
-                selected.forEach(player => {
-                    selectedPlayers.push(player.id);
-                    footballApp.updatePlayerStatus(player.id, 'field');
-                });
-
-                updatePlayersSelectionDisplay();
-                updateCompositionStats();
-                updateFormationDisplay();
-                updateValidationButton();
-                
-                showNotification(`Composition automatique crÃ©Ã©e (${selected.length} joueuses)`);
-            }
-        }
-
-        /**
-         * Application d'une formation prÃ©dÃ©finie
-         */
-        function applyFormation(formation) {
-            const players = footballApp.getState().players;
-            const availablePlayers = players.filter(p => p.status !== 'sanctioned');
-            
-            const formations = {
-                '4-4-2': { dÃ©fenseuse: 4, milieu: 4, attaquante: 2 },
-                '4-3-3': { dÃ©fenseuse: 4, milieu: 3, attaquante: 3 },
-                '3-5-2': { dÃ©fenseuse: 3, milieu: 5, attaquante: 2 },
-                '5-3-2': { dÃ©fenseuse: 5, milieu: 3, attaquante: 2 }
-            };
-
-            const config = formations[formation];
-            if (!config) return;
-
-            // VÃ©rifier les disponibilitÃ©s
-            const goalkeepers = availablePlayers.filter(p => p.position === 'gardienne');
-            if (goalkeepers.length === 0) {
-                showNotification('Aucune gardienne disponible', 'error');
-                return;
-            }
-
-            let canApply = true;
-            let message = `Formation ${formation}:\n`;
-            
-            Object.entries(config).forEach(([position, needed]) => {
-                const available = availablePlayers.filter(p => p.position === position).length;
-                message += `- ${position}s: ${needed} requis, ${available} disponibles\n`;
-                if (available < needed) {
-                    canApply = false;
-                }
-            });
-
-            if (!canApply) {
-                alert(`Impossible d'appliquer la formation ${formation}:\n\n${message}`);
-                return;
-            }
-
-            if (confirm(`Appliquer la formation ${formation} ?\n\n${message}`)) {
-                // Effacer la sÃ©lection actuelle
-                selectedPlayers.forEach(playerId => {
-                    footballApp.updatePlayerStatus(playerId, 'bench');
-                });
-                selectedPlayers = [];
-
-                // Appliquer la nouvelle formation
-                const selected = [];
-                
-                // 1 gardienne
-                selected.push(goalkeepers[0]);
-                
-                // Autres positions selon la formation
-                Object.entries(config).forEach(([position, needed]) => {
-                    const positionPlayers = availablePlayers.filter(p => p.position === position);
-                    for (let i = 0; i < needed && i < positionPlayers.length; i++) {
-                        selected.push(positionPlayers[i]);
-                    }
-                });
-
-                // Appliquer la sÃ©lection
-                selected.forEach(player => {
-                    selectedPlayers.push(player.id);
-                    footballApp.updatePlayerStatus(player.id, 'field');
-                });
-
-                updatePlayersSelectionDisplay();
-                updateCompositionStats();
-                updateFormationDisplay();
-                updateValidationButton();
-                
-                showNotification(`Formation ${formation} appliquÃ©e !`);
-            }
-        }
-
-        /**
-         * Validation de la composition
-         */
-        function validateComposition() {
-            const players = footballApp.getState().players;
-            const selected = selectedPlayers.map(id => players.find(p => p.id === id)).filter(Boolean);
-            const goalkeepers = selected.filter(p => p.position === 'gardienne').length;
-            
-            if (selected.length !== 11) {
-                showNotification(`Il faut exactement 11 joueuses (${selected.length} sÃ©lectionnÃ©es)`, 'error');
-                return;
-            }
-
-            if (goalkeepers !== 1) {
-                showNotification('Il faut exactement 1 gardienne', 'error');
-                return;
-            }
-
-            // Sauvegarder la composition
-            footballApp.saveState();
-            
-            // Afficher le rÃ©sumÃ©
-            displayValidationSummary(selected);
-            document.getElementById('validationModal').style.display = 'block';
-        }
-
-        /**
-         * Affichage du rÃ©sumÃ© de validation
-         */
-        function displayValidationSummary(selected) {
-            const container = document.getElementById('validatedComposition');
-            
-            const positions = {
-                gardienne: selected.filter(p => p.position === 'gardienne'),
-                dÃ©fenseuse: selected.filter(p => p.position === 'dÃ©fenseuse'),
-                milieu: selected.filter(p => p.position === 'milieu'),
-                attaquante: selected.filter(p => p.position === 'attaquante')
-            };
-
-            const formation = `${positions.dÃ©fenseuse.length}-${positions.milieu.length}-${positions.attaquante.length}`;
-
-            container.innerHTML = `
-                <div class="formation-summary">
-                    <h4>Formation: ${formation}</h4>
-                    <div class="position-summary">
-                        <div><strong>ðŸ¥… Gardienne:</strong> ${positions.gardienne.map(p => p.name).join(', ')}</div>
-                        <div><strong>ðŸ›¡ï¸ DÃ©fense (${positions.dÃ©fenseuse.length}):</strong> ${positions.dÃ©fenseuse.map(p => p.name).join(', ')}</div>
-                        <div><strong>âš™ï¸ Milieu (${positions.milieu.length}):</strong> ${positions.milieu.map(p => p.name).join(', ')}</div>
-                        <div><strong>âš½ Attaque (${positions.attaquante.length}):</strong> ${positions.attaquante.map(p => p.name).join(', ')}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        /**
-         * Fermeture de la modale de validation
-         */
-        function closeValidationModal() {
-            document.getElementById('validationModal').style.display = 'none';
-        }
-
-        /**
-         * Aller au match
-         */
-        function goToMatch() {
-            showNotification('Redirection vers l\'interface de match...', 'success');
-            setTimeout(() => {
-                window.location.href = 'match.html';
-            }, 1500);
-        }
-
-        // Fonction spÃ©cialisÃ©e pour cette page
-        function updateSpecificPlayersDisplay() {
-            loadCurrentComposition();
-            updatePlayersSelectionDisplay();
-            updateCompositionStats();
-            updateFormationDisplay();
-            updateValidationButton();
-        }
-    </script>
-
-    <style>
-        /* Styles spÃ©cifiques Ã  la page composition */
-        .composition-status {
-            padding: 15px;
-            border-radius: var(--border-radius);
-            margin: 10px 0;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .composition-status.success {
-            background: rgba(39, 174, 96, 0.2);
-            border: 2px solid var(--success-color);
-            color: var(--success-color);
-        }
-
-        .composition-status.warning {
-            background: rgba(243, 156, 18, 0.2);
-            border: 2px solid var(--warning-color);
-            color: var(--warning-color);
-        }
-
-        .composition-status.error {
-            background: rgba(231, 76, 60, 0.2);
-            border: 2px solid var(--danger-color);
-            color: var(--danger-color);
-        }
-
-        .formation-display {
-            margin: 20px 0;
-            background: rgba(34, 139, 34, 0.1);
-            border-radius: var(--border-radius-lg);
-            padding: 20px;
-        }
-
-        .field {
-            background: linear-gradient(to bottom, #2d8a2f, #1a5f1d);
-            border-radius: var(--border-radius);
-            padding: 20px;
-            min-height: 400px;
-            position: relative;
-            border: 3px solid white;
-        }
-
-        .field-line {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
-            min-height: 80px;
-        }
-
-        .field-position {
-            text-align: center;
-            width: 100%;
-        }
-
-        .position-label {
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
-        }
-
-        .players-in-position {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .field-player {
-            background: rgba(255,255,255,0.9);
-            color: #2c3e50;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            text-align: center;
-            min-width: 60px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-
-        .player-name {
-            font-size: 11px;
-        }
-
-        .player-number {
-            font-size: 10px;
-            opacity: 0.8;
-        }
-
-        .empty-position {
-            color: rgba(255,255,255,0.6);
-            font-style: italic;
-            font-size: 12px;
-        }
-
-        .starting-eleven-list,
-        .bench-list {
-            margin: 20px 0;
-            padding: 15px;
-            background: rgba(255,255,255,0.1);
-            border-radius: var(--border-radius);
-        }
-
-        .players-list {
-            margin-top: 10px;
-        }
-
-        .position-group {
-            margin: 10px 0;
-        }
-
-        .position-group h4 {
-            color: var(--warning-color);
-            margin-bottom: 5px;
-        }
-
-        .position-group ul {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        .position-group li {
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .formations-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        .formation-btn {
-            padding: 20px;
-            background: rgba(255,255,255,0.1);
-            border: 2px solid rgba(255,255,255,0.2);
-            border-radius: var(--border-radius);
-            color: white;
-            cursor: pointer;
-            transition: var(--transition);
-            text-align: center;
-        }
-
-        .formation-btn:hover {
-            background: rgba(255,255,255,0.2);
-            transform: translateY(-2px);
-        }
-
-        .formation-name {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .formation-desc {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-
-        .formation-summary {
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: var(--border-radius);
-            margin: 15px 0;
-        }
-
-        .position-summary div {
-            margin: 10px 0;
-            padding: 8px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 5px;
-        }
-
-        @media (max-width: 768px) {
-            .field {
-                min-height: 300px;
-                padding: 15px;
-            }
-
-            .field-line {
-                margin: 15px 0;
-                min-height: 60px;
-            }
-
-            .field-player {
-                padding: 6px 10px;
-                font-size: 10px;
-                min-width: 50px;
-            }
-
-            .formations-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/notification.js"></script>
+    <script src="../js/composition.js"></script>
 </body>
 </html>
