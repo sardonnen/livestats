@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Spectateur Live - Football Stats</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        /* ===== STYLES SPECTATEUR ===== */
+        body {
+            background: white;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            margin: 0;
+        }
+
+        .header h1 {
+            font-size: 1.3em;
+            margin: 5px 0;
+        }
+
+        .header p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .nav-tabs {
+            display: none;
+        }
+
+        .main-content {
+            padding: 15px;
+            gap: 15px;
+        }
+
+        /* Score Board */
+        .score-board {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            text-align: center;
+        }
+
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .team-name {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .score {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .time {
+            font-size: 2em;
+            font-family: 'Courier New', monospace;
+            border-left: 2px solid rgba(255, 255, 255, 0.3);
+            border-right: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .half {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #95a5a6;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-box.opponent {
+            border-left-color: #e74c3c;
+        }
+
+        /* Événements */
+        .events-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .section-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #2c3e50;
+        }
+
+        .events-list {
+            max-height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .event {
+            background: white;
+            padding: 12px;
+            margin: 6px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .event-icon {
+            font-size: 1.3em;
+            margin-right: 10px;
+        }
+
+        .event-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .event-type {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95em;
+        }
+
+        .event-player {
+            font-size: 0.85em;
+            color: #95a5a6;
+        }
+
+        .event-time {
+            font-family: monospace;
+            color: #95a5a6;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        /* Status bar */
+        .status-bar {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .sync-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #27ae60;
+        }
+
+        .sync-indicator.offline {
+            background: #e74c3c;
+        }
+
+        .auto-refresh-toggle {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .auto-refresh-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .auto-refresh-toggle.active {
+            background: #27ae60;
+        }
+
+        /* Players section */
+        .players-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .player-card {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border: 2px solid #ecf0f1;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .player-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .player-name {
+            font-size: 0.85em;
+            color: #2c3e50;
+            margin-top: 5px;
+            word-break: break-word;
+        }
+
+        .player-stats {
+            font-size: 0.75em;
+            color: #95a5a6;
+            margin-top: 3px;
+        }
+
+        /* Share Link */
+        .share-section {
+            background: #ecf0f1;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .share-section p {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .share-link {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85em;
+            color: #3498db;
+            word-break: break-all;
+            margin: 10px 0;
+            border: 1px solid #bdc3c7;
+        }
+
+        .copy-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .score {
+                font-size: 2em;
+            }
+
+            .time {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>👁️ Spectateur Live</h1>
+            <p id="matchTitle">Chargement...</p>
+        </header>
+
+        <main class="main-content">
+            <!-- Score Board -->
+            <div class="score-board">
+                <div class="score-item">
+                    <div class="team-name" id="team1Name">Équipe 1</div>
+                    <div class="score" id="team1Score">0</div>
+                </div>
+
+                <div class="score-item">
+                    <div class="time" id="matchTime">00:00</div>
+                    <div class="half" id="matchHalf">1ère</div>
+                </div>
+
+                <div class="score-item">
+                    <div class="team-name" id="team2Name">Équipe 2</div>
+                    <div class="score" id="team2Score">0</div>
+                </div>
+            </div>
+
+            <!-- Stats Team vs Team -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Tirs cadrés</div>
+                    <div class="stat-value" id="shotsOnTarget1">0</div>
+                </div>
+                <div class="stat-box opponent">
+                    <div class="stat-label">Tirs cadrés</div>
+                    <div class="stat-value" id="shotsOnTarget2">0</div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">Fautes</div>
+                    <div class="stat-value" id="fouls1">0</div>
+                </div>
+                <div class="stat-box opponent">
+                    <div class="stat-label">Fautes</div>
+                    <div class="stat-value" id="fouls2">0</div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">Cartons</div>
+                    <div class="stat-value" id="cards1">0</div>
+                </div>
+                <div class="stat-box opponent">
+                    <div class="stat-label">Cartons</div>
+                    <div class="stat-value" id="cards2">0</div>
+                </div>
+            </div>
+
+            <!-- Players Section -->
+            <div class="players-section" id="playersSection" style="display: none;">
+                <div class="section-title">👥 Équipe Titulaire</div>
+                <div class="players-grid" id="playersList"></div>
+            </div>
+
+            <!-- Events Section -->
+            <div class="events-section">
+                <div class="section-title">📋 Événements</div>
+                <div class="events-list" id="eventsList"></div>
+            </div>
+
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="sync-indicator" id="syncIndicator"></div>
+                    <span id="syncText">Synchronisation...</span>
+                </div>
+                <button class="auto-refresh-toggle active" id="autoRefreshBtn" onclick="toggleAutoRefresh()">
+                    🔄 Auto
+                </button>
+            </div>
+
+            <!-- Share Link -->
+            <div class="share-section">
+                <p>📱 Partagez le lien pour que d'autres regardent :</p>
+                <div class="share-link" id="shareLink"></div>
+                <button class="copy-btn" onclick="copyShareLink()">📋 Copier le lien</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/data-manager.js"></script>
+    <script src="../js/sync-manager.js"></script>
+    <script src="../js/notification.js"></script>
+
+    <script>
+        // ===== STATE SPECTATEUR =====
+        let spectatorState = {
+            matchId: null,
+            autoRefresh: true,
+            lastSync: null,
+            isOffline: false
+        };
+
+        // ===== INITIALISATION =====
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🎬 Initialisation spectateur');
+
+            // Récupérer l'ID du match depuis l'URL
+            const params = new URLSearchParams(window.location.search);
+            spectatorState.matchId = params.get('match');
+
+            if (!spectatorState.matchId) {
+                showNotification('ID de match manquant', 'error');
+                setTimeout(() => window.location.href = '../index.html', 2000);
+                return;
+            }
+
+            // Attendre que Supabase soit prêt
+            let attempts = 0;
+            while (!isSupabaseReady() && attempts < 20) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+
+            if (!isSupabaseReady()) {
+                showNotification('Erreur de connexion', 'error');
+                return;
+            }
+
+            // Afficher le lien de partage
+            document.getElementById('shareLink').textContent = window.location.href;
+
+            // Charger les données et démarrer la sync
+            await loadSpectatorData();
+            startAutoRefresh();
+        });
+
+        /**
+         * Charger les données du match
+         */
+        async function loadSpectatorData() {
+            try {
+                const match = await dataManager.getMatch(spectatorState.matchId);
+
+                if (!match) {
+                    showNotification('Match non trouvé', 'error');
+                    return;
+                }
+
+                // Mettre à jour le titre
+                document.getElementById('matchTitle').textContent = 
+                    `${match.team_name} vs ${match.opponent_name}`;
+
+                // Mettre à jour le score board
+                document.getElementById('team1Name').textContent = match.team_name;
+                document.getElementById('team2Name').textContent = match.opponent_name;
+                document.getElementById('team1Score').textContent = match.team_score;
+                document.getElementById('team2Score').textContent = match.opponent_score;
+
+                // Charger les événements
+                await updateEventsList();
+                await updateStats();
+
+                // Démarrer la synchronisation
+                syncManager.startSync(spectatorState.matchId, 2000);
+                syncManager.onSync(handleSync);
+
+                showNotification('Match chargé', 'success');
+
+            } catch (error) {
+                console.error('❌ Erreur chargement :', error);
+                showNotification('Erreur chargement du match', 'error');
+            }
+        }
+
+        /**
+         * Gérer les mises à jour de sync
+         */
+        function handleSync(syncData) {
+            if (syncData.match) {
+                document.getElementById('team1Score').textContent = syncData.match.team_score;
+                document.getElementById('team2Score').textContent = syncData.match.opponent_score;
+            }
+
+            if (syncData.events) {
+                displayEvents(syncData.events);
+            }
+
+            if (syncData.playerStats) {
+                updatePlayerDisplay(syncData.playerStats);
+            }
+
+            updateSyncStatus(true);
+            spectatorState.lastSync = new Date();
+        }
+
+        /**
+         * Afficher les événements
+         */
+        function displayEvents(events) {
+            const eventsList = document.getElementById('eventsList');
+            eventsList.innerHTML = '';
+
+            const iconMap = {
+                goal: '⚽',
+                shot_on_target: '🎯',
+                shot_off_target: '📍',
+                card: '🟨',
+                foul: '⚠️',
+                assist: '🎪',
+                substitution: '🔄'
+            };
+
+            const cardColors = {
+                yellow: '🟨',
+                red: '🟥',
+                white: '⬜'
+            };
+
+            const lastEvents = events.slice(-20).reverse();
+
+            lastEvents.forEach(event => {
+                const minutes = Math.floor(event.event_time / 60);
+                const element = document.createElement('div');
+                element.className = 'event';
+
+                let eventLabel = event.event_type;
+                if (event.event_type === 'card' && event.card_type) {
+                    eventLabel += ` ${cardColors[event.card_type] || ''}`;
+                }
+
+                element.innerHTML = `
+                    <div class="event-icon">${iconMap[event.event_type] || '📌'}</div>
+                    <div class="event-info">
+                        <div class="event-type">${eventLabel}</div>
+                        <div class="event-player">${event.is_team ? '✓ Notre équipe' : '- Adversaire'}</div>
+                    </div>
+                    <div class="event-time">${minutes}'</div>
+                `;
+
+                eventsList.appendChild(element);
+            });
+        }
+
+        /**
+         * Mettre à jour les événements
+         */
+        async function updateEventsList() {
+            try {
+                const events = await dataManager.getMatchEvents(spectatorState.matchId);
+                displayEvents(events);
+            } catch (error) {
+                console.error('Erreur événements :', error);
+            }
+        }
+
+        /**
+         * Mettre à jour les stats
+         */
+        async function updateStats() {
+            try {
+                const events = await dataManager.getMatchEvents(spectatorState.matchId);
+                const opponentStats = await dataManager.getOpponentStats(spectatorState.matchId);
+
+                // Compter les stats de notre équipe
+                const shotsOn = events.filter(e => e.event_type === 'shot_on_target' && e.is_team).length;
+                const fouls = events.filter(e => e.event_type === 'foul' && e.is_team).length;
+                const cards = events.filter(e => e.event_type === 'card' && e.is_team).length;
+
+                document.getElementById('shotsOnTarget1').textContent = shotsOn;
+                document.getElementById('fouls1').textContent = fouls;
+                document.getElementById('cards1').textContent = cards;
+
+                // Stats adversaire
+                if (opponentStats) {
+                    document.getElementById('shotsOnTarget2').textContent = opponentStats.shots_on_target || 0;
+                    document.getElementById('fouls2').textContent = opponentStats.fouls || 0;
+                    document.getElementById('cards2').textContent = 
+                        (opponentStats.yellow_cards || 0) + (opponentStats.red_cards || 0);
+                }
+
+            } catch (error) {
+                console.error('Erreur stats :', error);
+            }
+        }
+
+        /**
+         * Afficher les joueurs
+         */
+        async function updatePlayerDisplay(playerStats) {
+            const playersSection = document.getElementById('playersSection');
+            const playersList = document.getElementById('playersList');
+
+            if (!playerStats || playerStats.length === 0) {
+                playersSection.style.display = 'none';
+                return;
+            }
+
+            playersSection.style.display = 'block';
+            playersList.innerHTML = '';
+
+            playerStats.forEach(stat => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+
+                const playerName = stat.players?.name || 'Joueur';
+                const goals = stat.goals || 0;
+                const assists = stat.assists || 0;
+
+                card.innerHTML = `
+                    <div class="player-number">${stat.players?.number || '?'}</div>
+                    <div class="player-name">${playerName}</div>
+                    <div class="player-stats">${goals}⚽ ${assists}🎪</div>
+                `;
+
+                playersList.appendChild(card);
+            });
+        }
+
+        /**
+         * Démarrer l'actualisation auto
+         */
+        function startAutoRefresh() {
+            setInterval(() => {
+                if (spectatorState.autoRefresh) {
+                    updateEventsList();
+                    updateStats();
+                }
+            }, 5000);
+        }
+
+        /**
+         * Basculer l'actualisation auto
+         */
+        function toggleAutoRefresh() {
+            spectatorState.autoRefresh = !spectatorState.autoRefresh;
+            const btn = document.getElementById('autoRefreshBtn');
+            btn.classList.toggle('active', spectatorState.autoRefresh);
+            btn.textContent = spectatorState.autoRefresh ? '🔄 Auto' : '⏸️ Manuel';
+        }
+
+        /**
+         * Mettre à jour le statut de sync
+         */
+        function updateSyncStatus(isOnline = true) {
+            const indicator = document.getElementById('syncIndicator');
+            const text = document.getElementById('syncText');
+
+            if (!isOnline) {
+                indicator.classList.add('offline');
+                text.textContent = 'Mode hors ligne';
+            } else {
+                indicator.classList.remove('offline');
+                const time = spectatorState.lastSync 
+                    ? spectatorState.lastSync.toLocaleTimeString() 
+                    : 'À jour';
+                text.textContent = `Synchronisé • ${time}`;
+            }
+        }
+
+        /**
+         * Copier le lien de partage
+         */
+        function copyShareLink() {
+            const link = document.getElementById('shareLink').textContent;
+            navigator.clipboard.writeText(link).then(() => {
+                showNotification('Lien copié !', 'success');
+            }).catch(() => {
+                showNotification('Erreur copie', 'error');
+            });
+        }
+
+        // Gérer la déconnexion
+        window.addEventListener('offline', () => {
+            spectatorState.isOffline = true;
+            updateSyncStatus(false);
+            showNotification('Mode hors ligne', 'warning');
+        });
+
+        window.addEventListener('online', () => {
+            spectatorState.isOffline = false;
+            updateSyncStatus(true);
+            showNotification('Reconnecté', 'success');
+        });
+
+        console.log('✅ Spectateur chargé');
+    </script>
+</body>
+</html>

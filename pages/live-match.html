@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Match Live - Football Stats</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        /* ===== STYLES SPÉCIFIQUES INTERFACE LIVE ===== */
+        body {
+            background: white;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* En-tête compact */
+        .header {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            padding: 10px;
+            margin: 0;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.2em;
+            margin: 5px 0;
+        }
+
+        .header p {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        /* Navigation cachée en mode live */
+        .nav-tabs {
+            display: none;
+        }
+
+        /* Contenu principal */
+        .main-content {
+            padding: 10px;
+            gap: 10px;
+        }
+
+        /* ===== SCORE ET CHRONOMÈTRE ===== */
+        .live-score-board {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            border-radius: 12px;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .score-section {
+            text-align: center;
+        }
+
+        .team-name {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .score-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .time-section {
+            text-align: center;
+            border-left: 2px solid rgba(255, 255, 255, 0.3);
+            border-right: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .match-time {
+            font-size: 2em;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+
+        .match-half {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        /* ===== CONTRÔLES MATCH ===== */
+        .match-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
+        .control-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-start {
+            background: #27ae60;
+        }
+
+        .btn-start:hover {
+            background: #229954;
+        }
+
+        .btn-pause {
+            background: #f39c12;
+        }
+
+        .btn-pause:hover {
+            background: #e67e22;
+        }
+
+        .btn-half {
+            background: #9b59b6;
+        }
+
+        .btn-half:hover {
+            background: #8e44ad;
+        }
+
+        /* ===== GRILLE D'ACTIONS ===== */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .action-btn {
+            background: white;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+            min-height: 80px;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .action-btn:hover {
+            border-color: #bdc3c7;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-icon {
+            font-size: 2em;
+        }
+
+        .action-label {
+            font-size: 0.85em;
+            color: #34495e;
+        }
+
+        /* ===== MODAL D'ACTION ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+
+        .modal-body {
+            margin: 20px 0;
+        }
+
+        .player-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .player-option {
+            background: #ecf0f1;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #2c3e50;
+        }
+
+        .player-option:active {
+            transform: scale(0.95);
+        }
+
+        .player-option.selected {
+            background: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .modal-btn-confirm {
+            background: #27ae60;
+            color: white;
+        }
+
+        .modal-btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .modal-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ===== ÉVÉNEMENTS RÉCENTS ===== */
+        .recent-events {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+
+        .recent-events h3 {
+            font-size: 0.95em;
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+        }
+
+        .events-list {
+            max-height: 200px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .event-item {
+            background: white;
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 6px;
+            font-size: 0.85em;
+            color: #34495e;
+            border-left: 3px solid #3498db;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .event-time {
+            color: #95a5a6;
+            font-family: monospace;
+            font-size: 0.8em;
+        }
+
+        /* ===== SYNC STATUS ===== */
+        .sync-status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        .sync-status.online {
+            color: #27ae60;
+        }
+
+        .sync-status.offline {
+            color: #e74c3c;
+        }
+
+        .sync-status.syncing {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 480px) {
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .player-list {
+                grid-template-columns: 1fr;
+            }
+
+            .action-btn {
+                min-height: 70px;
+            }
+
+            .match-time {
+                font-size: 1.5em;
+            }
+
+            .score-value {
+                font-size: 2em;
+            }
+        }
+    </style>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>⚽ Match Live</h1>
+            <p id="matchInfo">Chargement...</p>
+        </header>
+
+        <main class="main-content">
+            <!-- Score et Chronomètre -->
+            <div class="live-score-board">
+                <div class="score-section">
+                    <div class="team-name" id="teamName1">Mon Équipe</div>
+                    <div class="score-value" id="score1">0</div>
+                </div>
+
+                <div class="time-section">
+                    <div class="match-time" id="matchTime">00:00</div>
+                    <div class="match-half" id="matchHalf">1ère Mi-temps</div>
+                </div>
+
+                <div class="score-section">
+                    <div class="team-name" id="teamName2">Équipe Adverse</div>
+                    <div class="score-value" id="score2">0</div>
+                </div>
+            </div>
+
+            <!-- Contrôles Match -->
+            <div class="match-controls">
+                <button class="control-btn btn-start" id="playBtn" onclick="toggleTimer()">▶️ Démarrer</button>
+                <button class="control-btn btn-pause" onclick="resetTimer()">🔄 Reset</button>
+                <button class="control-btn btn-half" onclick="toggleHalf()">⭐ Mi-temps</button>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions-grid">
+                <button class="action-btn" onclick="openActionModal('goal')">
+                    <div class="action-icon">⚽</div>
+                    <div class="action-label">But</div>
+                </button>
+
+                <button class="action-btn" onclick="openActionModal('shot')">
+                    <div class="action-icon">🎯</div>
+                    <div class="action-label">Tir</div>
+                </button>
+
+                <button class="action-btn" onclick="openActionModal('card')">
+                    <div class="action-icon">🟨</div>
+                    <div class="action-label">Carton</div>
+                </button>
+
+                <button class="action-btn" onclick="openActionModal('foul')">
+                    <div class="action-icon">⚠️</div>
+                    <div class="action-label">Faute</div>
+                </button>
+
+                <button class="action-btn" onclick="openActionModal('assist')">
+                    <div class="action-icon">🎪</div>
+                    <div class="action-label">Passe Décisive</div>
+                </button>
+
+                <button class="action-btn" onclick="openActionModal('substitution')">
+                    <div class="action-icon">🔄</div>
+                    <div class="action-label">Changement</div>
+                </button>
+            </div>
+
+            <!-- Événements Récents -->
+            <div class="recent-events">
+                <h3>📋 Derniers Événements</h3>
+                <div class="events-list" id="eventsList"></div>
+            </div>
+        </main>
+
+        <!-- Modal d'Action -->
+        <div id="actionModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header" id="modalTitle">Action</div>
+
+                <div class="modal-body">
+                    <div id="teamChoice" style="display: none; margin-bottom: 15px;">
+                        <p style="margin: 0 0 10px 0; color: #34495e; font-weight: 600;">Qui a participé ?</p>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="action-btn" onclick="selectTeam(true)" style="flex: 1; background: #27ae60; color: white; border: none;">Notre équipe</button>
+                            <button class="action-btn" onclick="selectTeam(false)" style="flex: 1; background: #e74c3c; color: white; border: none;">Équipe adverse</button>
+                        </div>
+                    </div>
+
+                    <div id="playerChoice" style="display: none;">
+                        <p style="margin: 0 0 10px 0; color: #34495e; font-weight: 600;">Joueur</p>
+                        <div class="player-list" id="playerList"></div>
+                    </div>
+
+                    <div id="cardTypeChoice" style="display: none;">
+                        <p style="margin: 0 0 10px 0; color: #34495e; font-weight: 600;">Type de carton</p>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="action-btn" onclick="selectCardType('yellow')" style="flex: 1; background: #f1c40f; color: #2c3e50; border: none;">🟨 Jaune</button>
+                            <button class="action-btn" onclick="selectCardType('red')" style="flex: 1; background: #e74c3c; color: white; border: none;">🟥 Rouge</button>
+                        </div>
+                    </div>
+
+                    <div id="shotTypeChoice" style="display: none;">
+                        <p style="margin: 0 0 10px 0; color: #34495e; font-weight: 600;">Type de tir</p>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="action-btn" onclick="selectShotType('on_target')" style="flex: 1; background: #3498db; color: white; border: none;">🎯 Cadré</button>
+                            <button class="action-btn" onclick="selectShotType('off_target')" style="flex: 1; background: #95a5a6; color: white; border: none;">📍 Non cadré</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-confirm" onclick="confirmAction()">✓ Confirmer</button>
+                    <button class="modal-btn modal-btn-cancel" onclick="closeModal()">✕ Annuler</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sync Status -->
+        <div id="syncStatus" class="sync-status online" title="Statut de synchronisation">📡</div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/data-manager.js"></script>
+    <script src="../js/sync-manager.js"></script>
+    <script src="../js/notification.js"></script>
+    <script src="../js/live-match.js"></script>
+</body>
+</html>

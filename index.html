@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Stats - Manager</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>⚽ Football Stats Manager</h1>
+            <p>Gestion complète des statistiques de match avec Supabase</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <a href="index.html" class="nav-link active">🏠 Accueil</a>
+            <a href="pages/team.html" class="nav-link">👥 Équipe</a>
+            <a href="pages/composition.html" class="nav-link">📋 Compo</a>
+            <a href="pages/stats.html" class="nav-link">📊 Stats</a>
+        </nav>
+
+        <!-- Contenu principal -->
+        <main class="main-content">
+            <!-- Actions Rapides -->
+            <div class="team-card">
+                <h2>🎮 Actions Rapides</h2>
+                <div class="quick-actions">
+                    <button class="btn btn-primary" onclick="app.startNewMatch()">
+                        🆕 Nouveau Match
+                    </button>
+                    <button class="btn btn-success" onclick="app.viewRecentMatches()">
+                        📜 Historique
+                    </button>
+                    <button class="btn btn-warning" onclick="app.generateSeasonReport()">
+                        📈 Rapport Saison
+                    </button>
+                </div>
+            </div>
+
+            <!-- Configuration du Match -->
+            <div class="team-card">
+                <h2>⚙️ Configuration du Match</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="teamName">Nom de votre équipe :</label>
+                        <input type="text" id="teamName" placeholder="Mon Équipe" value="">
+                    </div>
+                    <div class="form-group">
+                        <label for="opponentName">Équipe adverse :</label>
+                        <input type="text" id="opponentName" placeholder="Équipe Adverse" value="">
+                    </div>
+                    <div class="form-group">
+                        <label for="venue">Lieu du match :</label>
+                        <input type="text" id="venue" placeholder="Stade Municipal" value="">
+                    </div>
+                    <div class="form-group">
+                        <label for="matchDate">Date du match :</label>
+                        <input type="datetime-local" id="matchDate">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statut Supabase -->
+            <div class="team-card">
+                <h2>🗄️ Statut Base de Données</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="dbStatus">⏳</div>
+                        <div class="stat-label">Connexion</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="matchCount">0</div>
+                        <div class="stat-label">Matchs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="playerCount">0</div>
+                        <div class="stat-label">Joueuses</div>
+                    </div>
+                </div>
+                <p style="margin-top: 15px; font-size: 0.9em; opacity: 0.9;">
+                    ✅ Assurez-vous d'avoir configuré vos clés Supabase dans <code>js/supabase-config.js</code>
+                </p>
+            </div>
+
+            <!-- Guide Rapide -->
+            <div class="team-card">
+                <h2>📖 Guide Rapide</h2>
+                <div class="guide-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Créer votre équipe</h3>
+                            <p>Allez dans l'onglet "Équipe" pour ajouter vos joueuses et leurs positions.</p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Composer le match</h3>
+                            <p>Allez dans "Compo" pour sélectionner vos 11 titulaires.</p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Démarrer le match</h3>
+                            <p>Cliquez sur "Nouveau Match" et vous serez redirigé vers l'interface live.</p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>Partager le spectateur</h3>
+                            <p>Pendant le match, cliquez sur "Générer Lien Live" pour partager l'accès spectateur.</p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h3>Analyser les stats</h3>
+                            <p>Après le match, consultez les stats détaillées et exportez en PDF.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informations Importantes -->
+            <div class="team-card">
+                <h2>ℹ️ Informations</h2>
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; border-left: 4px solid #f39c12;">
+                    <h3 style="margin-top: 0;">✨ Fonctionnalités Principales</h3>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li>✅ Suivi en temps réel avec Supabase</li>
+                        <li>✅ Synchronisation multi-appareils</li>
+                        <li>✅ Stats détaillées par joueuse</li>
+                        <li>✅ Interface spectateur simple</li>
+                        <li>✅ Export PDF des rapports</li>
+                        <li>✅ Historique complet des matchs</li>
+                    </ul>
+
+                    <h3>🔗 Liens Utiles</h3>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><a href="https://supabase.com/dashboard" target="_blank" style="color: #3498db;">Dashboard Supabase</a></li>
+                        <li><a href="pages/team.html" style="color: #3498db;">Gestion de l'équipe</a></li>
+                        <li><a href="pages/stats.html" style="color: #3498db;">Voir les statistiques</a></li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/data-manager.js"></script>
+    <script src="js/sync-manager.js"></script>
+    <script src="js/notification.js"></script>
+    <script src="js/pdf-export.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
