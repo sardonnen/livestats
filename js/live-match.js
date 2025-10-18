@@ -70,8 +70,33 @@ class LiveMatchInterface {
             this.state.opponentName = matchData.opponentName || 'Équipe Adverse';
             this.state.players = matchData.players || [];
 
-            // Charger depuis Supabase
-            const dbMatch = await dataManager.getMatch(this.state.matchId);
+            // Vérifier si le match existe dans Supabase
+            let dbMatch = await dataManager.getMatch(this.state.matchId);
+            
+            if (!dbMatch) {
+                // Créer le match dans Supabase s'il n'existe pas
+                console.log('📝 Création du match dans Supabase...');
+                dbMatch = await dataManager.createMatch(
+                    this.state.teamId,
+                    this.state.teamName,
+                    this.state.opponentName,
+                    matchData.venue || '',
+                    90
+                );
+
+                if (!dbMatch) {
+                    showNotification('Erreur création du match en base', 'error');
+                    return;
+                }
+
+                this.state.matchId = dbMatch.id;
+                localStorage.setItem('currentMatch', JSON.stringify({
+                    ...matchData,
+                    id: dbMatch.id
+                }));
+            }
+
+            // Mettre à jour les scores depuis la base
             if (dbMatch) {
                 this.state.teamScore = dbMatch.team_score;
                 this.state.opponentScore = dbMatch.opponent_score;
