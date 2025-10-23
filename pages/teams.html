@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion d'Équipe - Football Stats</title>
     <link rel="stylesheet" href="../css/style.css">
-    <link rel="stylesheet" href="../css/teams-style.css">
 </head>
 <body>
     <div class="container teams-container">
@@ -35,35 +34,37 @@
 
                 <!-- Actions Équipe -->
                 <div class="team-actions">
-                    <button class="btn btn-sm btn-primary" id="newTeamBtn">
+                    <button class="btn btn-sm btn-primary" onclick="teamsManager.showCreateTeamForm()">
                         ➕ Nouvelle Équipe
                     </button>
-                    <button class="btn btn-sm btn-warning" id="renameTeamBtn" disabled>
+                    <button class="btn btn-sm btn-warning" onclick="teamsManager.renameTeam()" id="renameTeamBtn" disabled>
                         ✏️ Renommer
                     </button>
-                    <button class="btn btn-sm btn-danger" id="deleteTeamBtn" disabled>
+                    <button class="btn btn-sm btn-danger" onclick="teamsManager.deleteTeam()" id="deleteTeamBtn" disabled>
                         🗑️ Supprimer
                     </button>
-                    <button class="btn btn-sm btn-success" id="syncBtn">
+                    <button class="btn btn-sm btn-success" onclick="teamsManager.syncWithSupabase()">
                         🔄 Sync Supabase
                     </button>
                 </div>
 
                 <!-- Liste des équipes -->
-                <div class="teams-list" id="teamsList"></div>
+                <div class="teams-list" id="teamsList">
+                    <p class="empty-state">Chargement des équipes...</p>
+                </div>
             </div>
 
             <!-- Panel Droit: Gestion Joueuses -->
             <div class="team-panel right-panel">
                 <!-- Tabs -->
                 <div class="tabs-container">
-                    <button class="tab-btn active" id="tabPlayersBtn">
+                    <button class="tab-btn active" onclick="teamsManager.switchTab('players')">
                         👥 Joueuses
                     </button>
-                    <button class="tab-btn" id="tabCompositionBtn">
+                    <button class="tab-btn" onclick="teamsManager.switchTab('composition')">
                         📍 Composition
                     </button>
-                    <button class="tab-btn" id="tabStatsBtn">
+                    <button class="tab-btn" onclick="teamsManager.switchTab('stats')">
                         📈 Stats
                     </button>
                 </div>
@@ -82,7 +83,7 @@
                                 <option value="MF">⚡ Milieu</option>
                                 <option value="FW">⚔️ Attaquant</option>
                             </select>
-                            <button class="btn btn-xs btn-primary" id="addPlayerBtn">Ajouter</button>
+                            <button class="btn btn-xs btn-primary" onclick="teamsManager.addPlayer()">Ajouter</button>
                         </div>
                     </div>
 
@@ -90,11 +91,21 @@
                     <div class="filter-section">
                         <label>Filtrer :</label>
                         <div class="filter-buttons">
-                            <button class="filter-btn active" data-filter="all">Toutes</button>
-                            <button class="filter-btn" data-filter="GK">🥅 GK</button>
-                            <button class="filter-btn" data-filter="DF">🛡️ DF</button>
-                            <button class="filter-btn" data-filter="MF">⚡ MF</button>
-                            <button class="filter-btn" data-filter="FW">⚔️ FW</button>
+                            <button class="filter-btn active" onclick="teamsManager.filterPlayers('all')">
+                                Toutes
+                            </button>
+                            <button class="filter-btn" onclick="teamsManager.filterPlayers('GK')">
+                                🥅 GK
+                            </button>
+                            <button class="filter-btn" onclick="teamsManager.filterPlayers('DF')">
+                                🛡️ DF
+                            </button>
+                            <button class="filter-btn" onclick="teamsManager.filterPlayers('MF')">
+                                ⚡ MF
+                            </button>
+                            <button class="filter-btn" onclick="teamsManager.filterPlayers('FW')">
+                                ⚔️ FW
+                            </button>
                         </div>
                     </div>
 
@@ -118,7 +129,7 @@
                         </div>
 
                         <div class="composition-actions">
-                            <button class="btn btn-sm btn-success" id="saveCompositionBtn">
+                            <button class="btn btn-sm btn-success" onclick="teamsManager.saveComposition()">
                                 💾 Sauvegarder
                             </button>
                         </div>
@@ -162,8 +173,8 @@
                     </select>
                 </div>
                 <div class="modal-actions">
-                    <button class="btn btn-primary" id="createTeamConfirmBtn">Créer</button>
-                    <button class="btn btn-secondary" id="createTeamCancelBtn">Annuler</button>
+                    <button class="btn btn-primary" onclick="teamsManager.createNewTeam()">Créer</button>
+                    <button class="btn btn-secondary" onclick="teamsManager.closeModal('createTeamModal')">Annuler</button>
                 </div>
             </div>
         </div>
@@ -172,239 +183,39 @@
         <div id="notification" class="notification"></div>
     </div>
 
-    <!-- ===== SCRIPTS - ORDRE TRÈS CRITIQUE ===== -->
+    <!-- ===== SCRIPTS ===== -->
 
     <!-- 1. Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- 2. Supabase Sync Module (crée window.initSupabaseSync) -->
-    <script src="../js/supabase-sync.js"></script>
-
-    <!-- 3. Supabase Config (utilise window.initSupabaseSync) -->
+    <!-- 2. Backend - Configuration -->
     <script src="../js/supabase-config.js"></script>
 
-    <!-- 4. Notification Manager -->
+    <!-- 3. Backend - Sync (AVANT config!) -->
+    <script src="../js/supabase-sync.js"></script>
+
+    <!-- 4. Backend - Notifications -->
     <script src="../js/notification.js"></script>
 
-    <!-- 5. Team Manager -->
+    <!-- 5. Backend - Team Manager (données locales) -->
     <script src="../js/team-manager.js"></script>
 
-    <!-- 6. Initialisation Custom -->
+    <!-- 6. Frontend - Teams UI (gestion d'équipe) -->
+    <script src="../js/teams.js"></script>
+
+    <!-- 7. Fermer modals au clic dehors -->
     <script>
-        console.log('🔧 Initialisation teams.html...');
-
-        // Attendre que tout soit chargé
-        async function waitForDependencies() {
-            let attempts = 0;
-            const maxAttempts = 100;
-
-            // Attendre Supabase SDK
-            while (!window.supabase && attempts < maxAttempts) {
-                await new Promise(resolve => setTimeout(resolve, 50));
-                attempts++;
-            }
-
-            if (window.supabase) {
-                console.log('✅ Supabase SDK détecté');
-            } else {
-                console.error('❌ Supabase SDK non chargé');
-                return false;
-            }
-
-            // Attendre SupabaseSync
-            attempts = 0;
-            while (!window.supabaseSync && attempts < maxAttempts) {
-                await new Promise(resolve => setTimeout(resolve, 50));
-                attempts++;
-            }
-
-            if (window.supabaseSync) {
-                console.log('✅ SupabaseSync prêt');
-            } else {
-                console.error('❌ SupabaseSync non disponible');
-                return false;
-            }
-
-            // Attendre TeamManager
-            attempts = 0;
-            while (!window.teamManager && attempts < maxAttempts) {
-                await new Promise(resolve => setTimeout(resolve, 50));
-                attempts++;
-            }
-
-            if (window.teamManager) {
-                console.log('✅ TeamManager prêt');
-                return true;
-            } else {
-                console.error('❌ TeamManager non disponible');
-                return false;
-            }
-        }
-
-        // Initialiser l'application
-        async function initializeApp() {
-            console.log('🔧 Vérification des dépendances...');
-            
-            const ready = await waitForDependencies();
-            
-            if (!ready) {
-                console.error('❌ Dépendances manquantes');
-                return;
-            }
-
-            console.log('✅ Toutes les dépendances sont prêtes');
-            
-            try {
-                // Charger les équipes depuis le localStorage
-                if (window.teamManager && typeof window.teamManager.loadTeams === 'function') {
-                    console.log('📦 Chargement des équipes...');
-                    await window.teamManager.loadTeams();
-                    console.log('✅ Équipes chargées');
-                } else {
-                    console.log('ℹ️ loadTeams non disponible');
-                }
-
-                // Synchroniser avec Supabase si prêt
-                if (window.supabaseManager && window.supabaseManager.isReady()) {
-                    console.log('🔄 Synchronisation Supabase...');
-                    await window.supabaseManager.downloadAllData();
-                } else {
-                    console.log('⚠️ Supabase non prêt pour la synchronisation');
-                }
-
-                console.log('✅ Application initialisée avec succès !');
-
-            } catch (error) {
-                console.error('❌ Erreur initialisation:', error);
-            }
-        }
-
-        // Lancer au chargement du DOM
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeApp);
-        } else {
-            initializeApp();
-        }
-
-        // Fermer les modals en cliquant dehors
         window.onclick = function(event) {
             if (event.target.classList && event.target.classList.contains('modal')) {
                 event.target.style.display = 'none';
             }
         };
 
-        // Attacher les événements globaux
-        document.addEventListener('DOMContentLoaded', function() {
-            // Boutons principaux
-            const newTeamBtn = document.getElementById('newTeamBtn');
-            const addPlayerBtn = document.getElementById('addPlayerBtn');
-
-            if (newTeamBtn) {
-                newTeamBtn.addEventListener('click', function() {
-                    document.getElementById('createTeamModal').style.display = 'flex';
-                });
+        // Sélection d'équipe
+        document.getElementById('teamSelect')?.addEventListener('change', function(e) {
+            if (e.target.value && window.teamsManager) {
+                window.teamsManager.selectTeamFromList(e.target.value);
             }
-
-            if (addPlayerBtn) {
-                addPlayerBtn.addEventListener('click', function() {
-                    if (window.teamManager && typeof window.teamManager.addPlayer === 'function') {
-                        window.teamManager.addPlayer();
-                    }
-                });
-            }
-
-            // Select équipe
-            const teamSelect = document.getElementById('teamSelect');
-            if (teamSelect) {
-                teamSelect.addEventListener('change', function() {
-                    if (window.teamManager && typeof window.teamManager.selectTeam === 'function') {
-                        window.teamManager.selectTeam();
-                    }
-                });
-            }
-
-            // Onglets
-            document.getElementById('tabPlayersBtn')?.addEventListener('click', function() {
-                if (window.teamManager && typeof window.teamManager.switchTab === 'function') {
-                    window.teamManager.switchTab('players');
-                }
-            });
-
-            document.getElementById('tabCompositionBtn')?.addEventListener('click', function() {
-                if (window.teamManager && typeof window.teamManager.switchTab === 'function') {
-                    window.teamManager.switchTab('composition');
-                }
-            });
-
-            document.getElementById('tabStatsBtn')?.addEventListener('click', function() {
-                if (window.teamManager && typeof window.teamManager.switchTab === 'function') {
-                    window.teamManager.switchTab('stats');
-                }
-            });
-
-            // Bouton Sync
-            document.getElementById('syncBtn')?.addEventListener('click', function() {
-                if (window.supabaseManager) {
-                    window.supabaseManager.uploadAllData();
-                }
-            });
-
-            // Modal create team
-            document.getElementById('createTeamConfirmBtn')?.addEventListener('click', function() {
-                if (window.teamManager && typeof window.teamManager.createTeam === 'function') {
-                    const nameInput = document.getElementById('newTeamName');
-                    const categorySelect = document.getElementById('newTeamCategory');
-                    
-                    const name = nameInput?.value?.trim();
-                    const category = categorySelect?.value?.trim() || '';
-                    
-                    if (!name) {
-                        alert('❌ Veuillez entrer un nom d\'équipe');
-                        return;
-                    }
-                    
-                    try {
-                        // Créer l'équipe
-                        const team = window.teamManager.createTeam(name, category);
-                        
-                        // Fermer le modal
-                        document.getElementById('createTeamModal').style.display = 'none';
-                        
-                        // Nettoyer les champs
-                        nameInput.value = '';
-                        categorySelect.value = '';
-                        
-                        // Rafraîchir la liste
-                        if (typeof window.teamManager.loadTeams === 'function') {
-                            window.teamManager.loadTeams();
-                        }
-                        
-                        // Notification
-                        if (window.notificationManager) {
-                            window.notificationManager.success(`✅ Équipe "${name}" créée !`);
-                        }
-                        
-                        console.log('✅ Équipe créée:', team);
-                        
-                        // Synchroniser avec Supabase
-                        if (window.supabaseManager && window.supabaseManager.isReady()) {
-                            window.supabaseManager.uploadAllData();
-                        }
-                        
-                    } catch (error) {
-                        console.error('❌ Erreur création équipe:', error);
-                        if (window.notificationManager) {
-                            window.notificationManager.error(`❌ Erreur: ${error.message}`);
-                        }
-                    }
-                }
-            });
-
-            document.getElementById('createTeamCancelBtn')?.addEventListener('click', function() {
-                document.getElementById('createTeamModal').style.display = 'none';
-            });
-
-            console.log('✅ Événements attachés v1');
         });
     </script>
 </body>

@@ -40,32 +40,73 @@ class TeamsManager {
     }
 
     /**
-     * Charger toutes les équipes depuis Supabase
+     * Charger les équipes (locales + Supabase)
      */
     async loadTeams() {
         try {
-            const { data: teams, error } = await supabaseClient
-                .from('teams')
-                .select('*')
-                .order('created_at', { ascending: false });
+            let teams = [];
 
-            if (error) throw error;
-
-            // Remplir le select
-            const select = document.getElementById('teamSelect');
-            select.innerHTML = '<option value="">-- Sélectionner une équipe --</option>';
-            
-            if (teams && teams.length > 0) {
-                teams.forEach(team => {
-                    const option = document.createElement('option');
-                    option.value = team.id;
-                    option.textContent = `${team.name} (${team.category || 'Sans catégorie'})`;
-                    option.dataset.teamId = team.id;
-                    select.appendChild(option);
-                });
+            // 1. Charger les équipes locales depuis TeamManager
+            if (window.teamManager) {
+                const localTeams = window.teamManager.getAllTeams();
+                teams = localTeams.map(t => ({
+                    id: t.id,
+                    name: t.name,
+                    category: t.category,
+                    color: t.color,
+                    player_count: (t.players || []).length,
+                    created_at: t.created_at,
+                    local: true
+                }));
+                console.log('✅ Équipes locales chargées:', teams.length);
             }
 
+            // 2. Charger aussi depuis Supabase si disponible
+            if (window.supabaseManager && window.supabaseManager.isReady()) {
+                try {
+                    const { data: supabaseTeams, error } = await window.supabaseSync.client
+                        .from('teams')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    if (!error && supabaseTeams) {
+                        // Fusionner : local + Supabase (sans doublon)
+                        supabaseTeams.forEach(st => {
+                            if (!teams.find(t => t.id === st.id)) {
+                                teams.push({
+                                    ...st,
+                                    player_count: st.player_count || 0,
+                                    remote: true
+                                });
+                            }
+                        });
+                        console.log('✅ Équipes Supabase fusionnées:', supabaseTeams.length);
+                    }
+                } catch (e) {
+                    console.log('ℹ️ Supabase non accessible, utilisation données locales');
+                }
+            }
+
+            // 3. Remplir le select
+            const select = document.getElementById('teamSelect');
+            if (select) {
+                select.innerHTML = '<option value="">-- Sélectionner une équipe --</option>';
+                
+                if (teams && teams.length > 0) {
+                    teams.forEach(team => {
+                        const option = document.createElement('option');
+                        option.value = team.id;
+                        option.textContent = `${team.name} (${team.category || 'Sans catégorie'})`;
+                        option.dataset.teamId = team.id;
+                        select.appendChild(option);
+                    });
+                }
+            }
+
+            // 4. Afficher la liste
             this.updateTeamsList(teams || []);
+            
+            console.log(`✅ ${teams.length} équipe(s) chargée(s)`);
         } catch (error) {
             console.error('❌ Erreur chargement équipes :', error);
             showNotification('Erreur chargement équipes', 'error');
