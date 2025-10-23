@@ -28,24 +28,24 @@
                 <!-- Sélecteur Équipe -->
                 <div class="team-selector">
                     <label>Catégorie / Équipe :</label>
-                    <select id="teamSelect" onchange="teamsManager.selectTeam()">
+                    <select id="teamSelect">
                         <option value="">-- Charger une équipe --</option>
                     </select>
                 </div>
 
                 <!-- Actions Équipe -->
                 <div class="team-actions">
-                    <button class="btn btn-sm btn-primary" onclick="teamsManager.showCreateTeamForm()">
+                    <button class="btn btn-sm btn-primary" id="newTeamBtn">
                         ➕ Nouvelle Équipe
                     </button>
-                    <button class="btn btn-sm btn-warning" onclick="teamsManager.renameTeam()" id="renameTeamBtn" disabled>
+                    <button class="btn btn-sm btn-warning" id="renameTeamBtn" disabled>
                         ✏️ Renommer
                     </button>
-                    <button class="btn btn-sm btn-danger" onclick="teamsManager.deleteTeam()" id="deleteTeamBtn" disabled>
+                    <button class="btn btn-sm btn-danger" id="deleteTeamBtn" disabled>
                         🗑️ Supprimer
                     </button>
-                    <button class="btn btn-sm btn-success" onclick="teamsManager.downloadTeamBackup()" id="downloadTeamBtn" disabled>
-                        💾 Télécharger
+                    <button class="btn btn-sm btn-success" id="syncBtn">
+                        🔄 Sync Supabase
                     </button>
                 </div>
 
@@ -57,14 +57,14 @@
             <div class="team-panel right-panel">
                 <!-- Tabs -->
                 <div class="tabs-container">
-                    <button class="tab-btn active" onclick="teamsManager.switchTab('players')">
-                        👥 Joueuses ({count_players})
+                    <button class="tab-btn active" id="tabPlayersBtn">
+                        👥 Joueuses
                     </button>
-                    <button class="tab-btn" onclick="teamsManager.switchTab('composition')">
-                        📍 Composition ({count_compo})
+                    <button class="tab-btn" id="tabCompositionBtn">
+                        📍 Composition
                     </button>
-                    <button class="tab-btn" onclick="teamsManager.switchTab('stats')">
-                        📈 Stats Joueuses
+                    <button class="tab-btn" id="tabStatsBtn">
+                        📈 Stats
                     </button>
                 </div>
 
@@ -82,7 +82,7 @@
                                 <option value="MF">⚡ Milieu</option>
                                 <option value="FW">⚔️ Attaquant</option>
                             </select>
-                            <button class="btn btn-xs btn-primary" onclick="teamsManager.addPlayer()">Ajouter</button>
+                            <button class="btn btn-xs btn-primary" id="addPlayerBtn">Ajouter</button>
                         </div>
                     </div>
 
@@ -90,78 +90,52 @@
                     <div class="filter-section">
                         <label>Filtrer :</label>
                         <div class="filter-buttons">
-                            <button class="filter-btn active" onclick="teamsManager.filterByPosition('all')">
-                                Toutes ({count_all})
-                            </button>
-                            <button class="filter-btn" onclick="teamsManager.filterByPosition('GK')">
-                                🥅 Gardiens ({count_gk})
-                            </button>
-                            <button class="filter-btn" onclick="teamsManager.filterByPosition('DF')">
-                                🛡️ Défenseurs ({count_df})
-                            </button>
-                            <button class="filter-btn" onclick="teamsManager.filterByPosition('MF')">
-                                ⚡ Milieux ({count_mf})
-                            </button>
-                            <button class="filter-btn" onclick="teamsManager.filterByPosition('FW')">
-                                ⚔️ Attaquants ({count_fw})
-                            </button>
+                            <button class="filter-btn active" data-filter="all">Toutes</button>
+                            <button class="filter-btn" data-filter="GK">🥅 GK</button>
+                            <button class="filter-btn" data-filter="DF">🛡️ DF</button>
+                            <button class="filter-btn" data-filter="MF">⚡ MF</button>
+                            <button class="filter-btn" data-filter="FW">⚔️ FW</button>
                         </div>
                     </div>
 
                     <!-- Liste Joueuses -->
                     <div class="players-list" id="playersList">
-                        <p class="empty-state">Aucune joueuse. Commencez par créer une équipe ou ajouter des joueuses.</p>
+                        <p class="empty-state">Sélectionnez une équipe pour commencer.</p>
                     </div>
                 </div>
 
                 <!-- TAB 2: Composition -->
                 <div class="tab-content" id="tab-composition">
                     <div class="composition-section">
-                        <h3>📍 Sélectionner 11 Titulaires</h3>
-                        <p class="hint">Cliquez sur une joueuse pour l'ajouter à la composition (max 11)</p>
+                        <h3>📍 Composition (11 Titulaires)</h3>
+                        <p class="hint">Cliquez sur une joueuse pour l'ajouter</p>
                         
                         <div class="composition-selected">
-                            <h4>✅ Sélectionnées ({count_selected}/11)</h4>
+                            <h4>✅ Sélectionnées (0/11)</h4>
                             <div class="selected-players" id="selectedPlayers">
-                                <p class="empty-state">Aucune joueuse sélectionnée</p>
+                                <p class="empty-state">Aucune sélection</p>
                             </div>
                         </div>
 
                         <div class="composition-actions">
-                            <button class="btn btn-sm btn-success" onclick="teamsManager.saveComposition()">
-                                💾 Sauvegarder Composition
-                            </button>
-                            <button class="btn btn-sm btn-warning" onclick="teamsManager.clearComposition()">
-                                🔄 Réinitialiser
+                            <button class="btn btn-sm btn-success" id="saveCompositionBtn">
+                                💾 Sauvegarder
                             </button>
                         </div>
 
                         <div class="composition-field">
-                            <h4>🎯 Vue Terrain (4-2-3-1)</h4>
+                            <h4>🎯 Terrain (4-2-3-1)</h4>
                             <canvas id="fieldCanvas" width="300" height="400"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 3: Stats Joueuses -->
+                <!-- TAB 3: Stats -->
                 <div class="tab-content" id="tab-stats">
                     <div class="stats-section">
-                        <h3>📈 Statistiques Individuelles</h3>
-                        <p class="hint">Stats cumulées de tous les matchs</p>
-                        
-                        <div class="stats-sort">
-                            <label>Trier par :</label>
-                            <select onchange="teamsManager.sortStats(this.value)">
-                                <option value="name">Nom (A-Z)</option>
-                                <option value="goals">Buts</option>
-                                <option value="assists">Passes décisives</option>
-                                <option value="playtime">Temps de jeu</option>
-                                <option value="yellowCards">Cartons jaunes</option>
-                            </select>
-                        </div>
-
+                        <h3>📈 Stats Joueuses</h3>
                         <div class="stats-list" id="statsList">
-                            <p class="empty-state">Aucune joueuse avec statistiques</p>
+                            <p class="empty-state">Aucune statistique</p>
                         </div>
                     </div>
                 </div>
@@ -171,59 +145,25 @@
         <!-- Modal: Créer Équipe -->
         <div class="modal" id="createTeamModal">
             <div class="modal-content modal-small">
-                <h2>➕ Créer une Nouvelle Équipe</h2>
+                <h2>➕ Nouvelle Équipe</h2>
                 <div class="form-group">
-                    <label>Nom de l'équipe :</label>
+                    <label>Nom :</label>
                     <input type="text" id="newTeamName" placeholder="Ex: U18 Féminines" maxlength="50">
                 </div>
                 <div class="form-group">
                     <label>Catégorie :</label>
                     <select id="newTeamCategory">
-                        <option value="">Créer une nouvelle catégorie...</option>
+                        <option value="">Personnalisée</option>
                         <option value="U12">U12</option>
                         <option value="U14">U14</option>
                         <option value="U16">U16</option>
                         <option value="U18">U18</option>
                         <option value="Seniors">Seniors</option>
-                        <option value="Masters">Masters</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Couleur principale :</label>
-                    <input type="color" id="teamColor" value="#2196F3">
-                </div>
-                <div class="modal-actions">
-                    <button class="btn btn-primary" onclick="teamsManager.createTeam()">Créer</button>
-                    <button class="btn btn-secondary" onclick="teamsManager.closeModal('createTeamModal')">Annuler</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal: Éditer Joueuse -->
-        <div class="modal" id="editPlayerModal">
-            <div class="modal-content modal-small">
-                <h2>✏️ Éditer Joueuse</h2>
-                <div class="form-group">
-                    <label>Nom :</label>
-                    <input type="text" id="editPlayerName" maxlength="30">
-                </div>
-                <div class="form-group">
-                    <label>Numéro :</label>
-                    <input type="number" id="editPlayerNumber" min="1" max="99">
-                </div>
-                <div class="form-group">
-                    <label>Position :</label>
-                    <select id="editPlayerPosition">
-                        <option value="GK">🥅 Gardien</option>
-                        <option value="DF">🛡️ Défenseur</option>
-                        <option value="MF">⚡ Milieu</option>
-                        <option value="FW">⚔️ Attaquant</option>
                     </select>
                 </div>
                 <div class="modal-actions">
-                    <button class="btn btn-primary" onclick="teamsManager.saveEditPlayer()">Sauvegarder</button>
-                    <button class="btn btn-danger" onclick="teamsManager.deletePlayer()">Supprimer</button>
-                    <button class="btn btn-secondary" onclick="teamsManager.closeModal('editPlayerModal')">Annuler</button>
+                    <button class="btn btn-primary" id="createTeamConfirmBtn">Créer</button>
+                    <button class="btn btn-secondary" id="createTeamCancelBtn">Annuler</button>
                 </div>
             </div>
         </div>
@@ -232,45 +172,73 @@
         <div id="notification" class="notification"></div>
     </div>
 
-    <!-- ===== SCRIPTS CHARGEMENT ===== -->
-    <!-- IMPORTANT: Ordre précis des dépendances ! -->
+    <!-- ===== SCRIPTS - ORDRE CRITIQUE ===== -->
 
-    <!-- 1. Supabase JavaScript SDK (depuis CDN) -->
+    <!-- 1️⃣ SUPABASE SDK (DOIT ÊTRE EN PREMIER!) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- 2. Configuration Supabase -->
+    <!-- 2️⃣ ATTENDRE QUE SUPABASE SOIT CHARGÉ, PUIS INITIALISER -->
+    <script>
+        // Vérifier que Supabase est chargé
+        if (!window.supabase) {
+            console.error('❌ Supabase SDK non chargé');
+        } else {
+            console.log('✅ Supabase SDK détecté');
+        }
+    </script>
+
+    <!-- 3️⃣ CONFIGURATION SUPABASE -->
     <script src="../js/supabase-config.js"></script>
 
-    <!-- 3. Sync avec Supabase -->
+    <!-- 4️⃣ SYNC SUPABASE (crée window.initSupabaseSync) -->
     <script src="../js/supabase-sync.js"></script>
 
-    <!-- 4. Notification Manager -->
+    <!-- 5️⃣ NOTIFICATION -->
     <script src="../js/notification.js"></script>
 
-    <!-- 5. Team Manager (notre module) -->
+    <!-- 6️⃣ TEAM MANAGER -->
     <script src="../js/team-manager.js"></script>
 
-    <!-- 6. Initialisation au chargement -->
+    <!-- 7️⃣ INITIALISATION -->
     <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🔧 Initialisation teams.html...');
-            
-            // Attendre que tout soit prêt
+        console.log('🔧 Démarrage initialisation...');
+
+        // Attendre que tout soit prêt
+        async function initializeApp() {
             let attempts = 0;
-            while (!window.teamManager && attempts < 50) {
-                await new Promise(resolve => setTimeout(resolve, 100));
+            const maxAttempts = 100;
+
+            // Attendre que teamManager soit disponible
+            while (!window.teamManager && attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 50));
                 attempts++;
             }
 
-            if (window.teamManager) {
-                console.log('✅ TeamManager prêt, initialisation...');
-                await window.teamManager.init();
-            } else {
-                console.error('❌ TeamManager non disponible après 5 secondes');
+            if (!window.teamManager) {
+                console.error('❌ TeamManager n\'a pas pu être initialisé');
+                return;
             }
-        });
 
-        // Fermer les modals en cliquant dehors
+            console.log('✅ TeamManager disponible, initialisation...');
+            
+            try {
+                // Initialiser le manager
+                if (typeof window.teamManager.init === 'function') {
+                    await window.teamManager.init();
+                    console.log('✅ Application initialisée avec succès');
+                } else {
+                    console.error('❌ teamManager.init n\'est pas une fonction');
+                    console.log('Méthodes disponibles:', Object.getOwnPropertyNames(window.teamManager));
+                }
+            } catch (error) {
+                console.error('❌ Erreur initialisation:', error);
+            }
+        }
+
+        // Lancer au chargement du DOM
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+        // Fermer les modals
         window.onclick = function(event) {
             if (event.target.classList && event.target.classList.contains('modal')) {
                 event.target.style.display = 'none';
