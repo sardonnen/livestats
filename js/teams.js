@@ -1,6 +1,39 @@
 // ===== GESTION D'ÉQUIPE - Interface Frontend =====
 // Gère l'UI de gestion des équipes, joueuses et compositions
 
+// ===== HELPER FUNCTIONS =====
+
+/**
+ * Afficher une notification
+ */
+function showNotification(message, type = 'info') {
+    const notification = document.getElementById('notification');
+    if (!notification) return;
+
+    notification.textContent = message;
+    notification.className = `notification show ${type}`;
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 3000);
+}
+
+/**
+ * Fermer un modal
+ */
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.style.display = 'none';
+}
+
+/**
+ * Ouvrir un modal
+ */
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.style.display = 'flex';
+}
+
 class TeamsManager {
     constructor() {
         this.currentTeamId = null;
@@ -22,14 +55,13 @@ class TeamsManager {
 
         // Attendre que Supabase soit prêt
         let attempts = 0;
-        while (!isSupabaseReady() && attempts < 20) {
+        while (!window.supabaseManager?.isReady() && attempts < 20) {
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
         }
 
-        if (!isSupabaseReady()) {
-            showNotification('Erreur de connexion à Supabase', 'error');
-            return;
+        if (!window.supabaseManager?.isReady()) {
+            console.log('⚠️ Supabase non prêt, utilisation mode local');
         }
 
         // Charger les équipes disponibles

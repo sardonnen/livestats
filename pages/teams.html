@@ -188,11 +188,11 @@
     <!-- 1. Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- 2. Backend - Configuration -->
-    <script src="../js/supabase-config.js"></script>
-
-    <!-- 3. Backend - Sync (AVANT config!) -->
+    <!-- 2. Backend - Sync (DOIT ÊTRE EN PREMIER pour créer window.initSupabaseSync!) -->
     <script src="../js/supabase-sync.js"></script>
+
+    <!-- 3. Backend - Configuration (utilise window.initSupabaseSync) -->
+    <script src="../js/supabase-config.js"></script>
 
     <!-- 4. Backend - Notifications -->
     <script src="../js/notification.js"></script>
