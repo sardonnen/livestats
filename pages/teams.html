@@ -232,11 +232,50 @@
         <div id="notification" class="notification"></div>
     </div>
 
-    <!-- Scripts -->
+    <!-- ===== SCRIPTS CHARGEMENT ===== -->
+    <!-- IMPORTANT: Ordre précis des dépendances ! -->
+
+    <!-- 1. Supabase JavaScript SDK (depuis CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- 2. Configuration Supabase -->
     <script src="../js/supabase-config.js"></script>
-    <script src="../js/data-manager.js"></script>
-    <script src="../js/sync-manager.js"></script>
+
+    <!-- 3. Sync avec Supabase -->
+    <script src="../js/supabase-sync.js"></script>
+
+    <!-- 4. Notification Manager -->
     <script src="../js/notification.js"></script>
-    <script src="../js/teams.js"></script>
+
+    <!-- 5. Team Manager (notre module) -->
+    <script src="../js/team-manager.js"></script>
+
+    <!-- 6. Initialisation au chargement -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🔧 Initialisation teams.html...');
+            
+            // Attendre que tout soit prêt
+            let attempts = 0;
+            while (!window.teamManager && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+
+            if (window.teamManager) {
+                console.log('✅ TeamManager prêt, initialisation...');
+                await window.teamManager.init();
+            } else {
+                console.error('❌ TeamManager non disponible après 5 secondes');
+            }
+        });
+
+        // Fermer les modals en cliquant dehors
+        window.onclick = function(event) {
+            if (event.target.classList && event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        };
+    </script>
 </body>
 </html>
