@@ -172,78 +172,196 @@
         <div id="notification" class="notification"></div>
     </div>
 
-    <!-- ===== SCRIPTS - ORDRE CRITIQUE ===== -->
+    <!-- ===== SCRIPTS - ORDRE TRÈS CRITIQUE ===== -->
 
-    <!-- 1️⃣ SUPABASE SDK (DOIT ÊTRE EN PREMIER!) -->
+    <!-- 1. Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- 2️⃣ ATTENDRE QUE SUPABASE SOIT CHARGÉ, PUIS INITIALISER -->
-    <script>
-        // Vérifier que Supabase est chargé
-        if (!window.supabase) {
-            console.error('❌ Supabase SDK non chargé');
-        } else {
-            console.log('✅ Supabase SDK détecté');
-        }
-    </script>
-
-    <!-- 3️⃣ CONFIGURATION SUPABASE -->
-    <script src="../js/supabase-config.js"></script>
-
-    <!-- 4️⃣ SYNC SUPABASE (crée window.initSupabaseSync) -->
+    <!-- 2. Supabase Sync Module (crée window.initSupabaseSync) -->
     <script src="../js/supabase-sync.js"></script>
 
-    <!-- 5️⃣ NOTIFICATION -->
+    <!-- 3. Supabase Config (utilise window.initSupabaseSync) -->
+    <script src="../js/supabase-config.js"></script>
+
+    <!-- 4. Notification Manager -->
     <script src="../js/notification.js"></script>
 
-    <!-- 6️⃣ TEAM MANAGER -->
+    <!-- 5. Team Manager -->
     <script src="../js/team-manager.js"></script>
 
-    <!-- 7️⃣ INITIALISATION -->
+    <!-- 6. Initialisation Custom -->
     <script>
-        console.log('🔧 Démarrage initialisation...');
+        console.log('🔧 Initialisation teams.html...');
 
-        // Attendre que tout soit prêt
-        async function initializeApp() {
+        // Attendre que tout soit chargé
+        async function waitForDependencies() {
             let attempts = 0;
             const maxAttempts = 100;
 
-            // Attendre que teamManager soit disponible
+            // Attendre Supabase SDK
+            while (!window.supabase && attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                attempts++;
+            }
+
+            if (window.supabase) {
+                console.log('✅ Supabase SDK détecté');
+            } else {
+                console.error('❌ Supabase SDK non chargé');
+                return false;
+            }
+
+            // Attendre SupabaseSync
+            attempts = 0;
+            while (!window.supabaseSync && attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                attempts++;
+            }
+
+            if (window.supabaseSync) {
+                console.log('✅ SupabaseSync prêt');
+            } else {
+                console.error('❌ SupabaseSync non disponible');
+                return false;
+            }
+
+            // Attendre TeamManager
+            attempts = 0;
             while (!window.teamManager && attempts < maxAttempts) {
                 await new Promise(resolve => setTimeout(resolve, 50));
                 attempts++;
             }
 
-            if (!window.teamManager) {
-                console.error('❌ TeamManager n\'a pas pu être initialisé');
+            if (window.teamManager) {
+                console.log('✅ TeamManager prêt');
+                return true;
+            } else {
+                console.error('❌ TeamManager non disponible');
+                return false;
+            }
+        }
+
+        // Initialiser l'application
+        async function initializeApp() {
+            console.log('🔧 Vérification des dépendances...');
+            
+            const ready = await waitForDependencies();
+            
+            if (!ready) {
+                console.error('❌ Dépendances manquantes');
                 return;
             }
 
-            console.log('✅ TeamManager disponible, initialisation...');
+            console.log('✅ Toutes les dépendances sont prêtes');
             
             try {
-                // Initialiser le manager
-                if (typeof window.teamManager.init === 'function') {
-                    await window.teamManager.init();
-                    console.log('✅ Application initialisée avec succès');
+                // Charger les équipes depuis le localStorage
+                if (window.teamManager && typeof window.teamManager.loadTeams === 'function') {
+                    console.log('📦 Chargement des équipes...');
+                    await window.teamManager.loadTeams();
+                    console.log('✅ Équipes chargées');
                 } else {
-                    console.error('❌ teamManager.init n\'est pas une fonction');
-                    console.log('Méthodes disponibles:', Object.getOwnPropertyNames(window.teamManager));
+                    console.log('ℹ️ loadTeams non disponible');
                 }
+
+                // Synchroniser avec Supabase si prêt
+                if (window.supabaseManager && window.supabaseManager.isReady()) {
+                    console.log('🔄 Synchronisation Supabase...');
+                    await window.supabaseManager.downloadAllData();
+                } else {
+                    console.log('⚠️ Supabase non prêt pour la synchronisation');
+                }
+
+                console.log('✅ Application initialisée avec succès !');
+
             } catch (error) {
                 console.error('❌ Erreur initialisation:', error);
             }
         }
 
         // Lancer au chargement du DOM
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
 
-        // Fermer les modals
+        // Fermer les modals en cliquant dehors
         window.onclick = function(event) {
             if (event.target.classList && event.target.classList.contains('modal')) {
                 event.target.style.display = 'none';
             }
         };
+
+        // Attacher les événements globaux
+        document.addEventListener('DOMContentLoaded', function() {
+            // Boutons principaux
+            const newTeamBtn = document.getElementById('newTeamBtn');
+            const addPlayerBtn = document.getElementById('addPlayerBtn');
+
+            if (newTeamBtn) {
+                newTeamBtn.addEventListener('click', function() {
+                    document.getElementById('createTeamModal').style.display = 'flex';
+                });
+            }
+
+            if (addPlayerBtn) {
+                addPlayerBtn.addEventListener('click', function() {
+                    if (window.teamManager && typeof window.teamManager.addPlayer === 'function') {
+                        window.teamManager.addPlayer();
+                    }
+                });
+            }
+
+            // Select équipe
+            const teamSelect = document.getElementById('teamSelect');
+            if (teamSelect) {
+                teamSelect.addEventListener('change', function() {
+                    if (window.teamManager && typeof window.teamManager.selectTeam === 'function') {
+                        window.teamManager.selectTeam();
+                    }
+                });
+            }
+
+            // Onglets
+            document.getElementById('tabPlayersBtn')?.addEventListener('click', function() {
+                if (window.teamManager && typeof window.teamManager.switchTab === 'function') {
+                    window.teamManager.switchTab('players');
+                }
+            });
+
+            document.getElementById('tabCompositionBtn')?.addEventListener('click', function() {
+                if (window.teamManager && typeof window.teamManager.switchTab === 'function') {
+                    window.teamManager.switchTab('composition');
+                }
+            });
+
+            document.getElementById('tabStatsBtn')?.addEventListener('click', function() {
+                if (window.teamManager && typeof window.teamManager.switchTab === 'function') {
+                    window.teamManager.switchTab('stats');
+                }
+            });
+
+            // Bouton Sync
+            document.getElementById('syncBtn')?.addEventListener('click', function() {
+                if (window.supabaseManager) {
+                    window.supabaseManager.uploadAllData();
+                }
+            });
+
+            // Modal create team
+            document.getElementById('createTeamConfirmBtn')?.addEventListener('click', function() {
+                if (window.teamManager && typeof window.teamManager.createTeam === 'function') {
+                    window.teamManager.createTeam();
+                }
+            });
+
+            document.getElementById('createTeamCancelBtn')?.addEventListener('click', function() {
+                document.getElementById('createTeamModal').style.display = 'none';
+            });
+
+            console.log('✅ Événements attachés');
+        });
     </script>
 </body>
 </html>
