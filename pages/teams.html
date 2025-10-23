@@ -102,11 +102,20 @@
     </div>
 
     <!-- Scripts -->
-    <!-- Backend: Gestion données -->
-    <script src="../js/teams.js"></script>
+    <!-- 1. Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- Backend: Notifications -->
+    <!-- 2. Supabase Config -->
+    <script src="../js/supabase-config.js"></script>
+    
+    <!-- 3. Supabase Sync -->
+    <script src="../js/supabase-sync.js"></script>
+    
+    <!-- 4. Backend: Notifications -->
     <script src="../js/notification.js"></script>
+    
+    <!-- 5. Backend: Gestion données -->
+    <script src="../js/teams.js"></script>
     
     <script>
         let selectedTeamId = null;
