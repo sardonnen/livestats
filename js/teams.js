@@ -981,6 +981,79 @@ class TeamsManager {
     }
 
     /**
+     * Filtrer les joueurs par position (alias pour filterByPosition)
+     */
+    filterPlayers(position) {
+        this.filterByPosition(position);
+    }
+
+    /**
+     * Synchroniser avec Supabase
+     */
+    syncWithSupabase() {
+        if (!window.supabaseManager?.isReady()) {
+            showNotification('❌ Supabase non prêt', 'error');
+            return;
+        }
+
+        console.log('🔄 Synchronisation avec Supabase...');
+        showNotification('🔄 Synchronisation...', 'info');
+        
+        // Uploader les données
+        if (window.supabaseManager.uploadAllData) {
+            window.supabaseManager.uploadAllData();
+            showNotification('✅ Synchronisé !', 'success');
+        } else {
+            showNotification('⚠️ Sync non disponible', 'warning');
+        }
+    }
+
+    /**
+     * Créer une nouvelle équipe (appelée par le HTML)
+     */
+    createNewTeam() {
+        const nameInput = document.getElementById('newTeamName');
+        const categorySelect = document.getElementById('newTeamCategory');
+        
+        const name = nameInput?.value?.trim();
+        const category = categorySelect?.value?.trim() || '';
+        
+        if (!name) {
+            showNotification('Veuillez entrer un nom d\'équipe', 'warning');
+            return;
+        }
+        
+        try {
+            // Créer l'équipe dans TeamManager (données locales)
+            const team = window.teamManager.createTeam(name, category);
+            
+            // Fermer le modal
+            this.closeModal('createTeamModal');
+            
+            // Nettoyer les champs
+            nameInput.value = '';
+            categorySelect.value = '';
+            
+            // Rafraîchir la liste
+            this.loadTeams();
+            
+            // Notification
+            showNotification(`✅ Équipe "${name}" créée !`, 'success');
+            
+            // Sync Supabase
+            if (window.supabaseManager && window.supabaseManager.isReady()) {
+                window.supabaseManager.uploadAllData?.();
+            }
+            
+            console.log('✅ Équipe créée via UI:', team);
+            
+        } catch (error) {
+            console.error('❌ Erreur création équipe:', error);
+            showNotification(`❌ Erreur: ${error.message}`, 'error');
+        }
+    }
+
+    /**
      * Fermer un modal
      */
     closeModal(modalId) {
