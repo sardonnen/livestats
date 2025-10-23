@@ -102,8 +102,10 @@
     </div>
 
     <!-- Scripts -->
-    <script src="../js/storage.js"></script>
-    <script src="../js/team-manager.js"></script>
+    <!-- Backend: Gestion données -->
+    <script src="../js/teams.js"></script>
+    
+    <!-- Backend: Notifications -->
     <script src="../js/notification.js"></script>
     
     <script>
@@ -114,9 +116,9 @@
             updateTeamsList();
             setupEventListeners();
             
-            // Auto-sync
-            if (window.teamManager) {
-                window.teamManager.enableAutoSync(15000);
+            // Auto-sync avec Supabase
+            if (window.teamsBackend) {
+                window.teamsBackend.enableAutoSync(15000);
             }
         });
 
@@ -153,7 +155,7 @@
                 return;
             }
 
-            const team = window.teamManager.createTeam(name, category, color);
+            const team = window.teamsBackend.createTeam(name, category, color);
             if (team) {
                 showNotification(`✅ Équipe "${name}" créée !`, 'success');
                 document.getElementById('createTeamForm').reset();
@@ -166,7 +168,7 @@
 
         function updateTeamsList() {
             const container = document.getElementById('teamsList');
-            const teams = window.teamManager.getAllTeams();
+            const teams = window.teamsBackend.getAllTeams();
 
             if (teams.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #bdc3c7; padding: 2rem; grid-column: 1/-1;">Aucune équipe créée. Commencez par créer une équipe ci-dessus.</p>';
@@ -206,7 +208,7 @@
 
         function selectTeam(teamId) {
             selectedTeamId = teamId;
-            const team = window.teamManager.getTeam(teamId);
+            const team = window.teamsBackend.getTeam(teamId);
             
             if (!team) return;
 
@@ -223,10 +225,10 @@
         }
 
         function editTeam() {
-            const team = window.teamManager.getTeam(selectedTeamId);
+            const team = window.teamsBackend.getTeam(selectedTeamId);
             const newName = prompt('Nouveau nom d\'équipe :', team.name);
             if (newName) {
-                window.teamManager.updateTeam(selectedTeamId, { name: newName });
+                window.teamsBackend.updateTeam(selectedTeamId, { name: newName });
                 showNotification('✅ Équipe mise à jour', 'success');
                 updateTeamsList();
                 selectTeam(selectedTeamId);
@@ -234,9 +236,9 @@
         }
 
         function deleteTeam() {
-            const team = window.teamManager.getTeam(selectedTeamId);
+            const team = window.teamsBackend.getTeam(selectedTeamId);
             if (confirm(`⚠️ Êtes-vous sûr de vouloir supprimer l'équipe "${team.name}" et toutes ses joueuses ?`)) {
-                window.teamManager.deleteTeam(selectedTeamId);
+                window.teamsBackend.deleteTeam(selectedTeamId);
                 showNotification('✅ Équipe supprimée', 'success');
                 closeTeamSelection();
                 updateTeamsList();
@@ -255,7 +257,7 @@
                 return;
             }
 
-            const player = window.teamManager.addPlayerToTeam(selectedTeamId, name, position, number);
+            const player = window.teamsBackend.addPlayerToTeam(selectedTeamId, name, position, number);
             if (player) {
                 showNotification(`✅ Joueuse "${name}" ajoutée !`, 'success');
                 document.getElementById('addPlayerForm').reset();
@@ -265,7 +267,7 @@
 
         function updatePlayersList(teamId) {
             const container = document.getElementById('playersList');
-            const players = window.teamManager.getTeamPlayers(teamId);
+            const players = window.teamsBackend.getTeamPlayers(teamId);
 
             if (players.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #bdc3c7; padding: 2rem; grid-column: 1/-1;">Aucune joueuse ajoutée.</p>';
@@ -300,9 +302,9 @@
         }
 
         function removePlayer(teamId, playerId) {
-            const player = window.teamManager.getPlayer(teamId, playerId);
+            const player = window.teamsBackend.getPlayer(teamId, playerId);
             if (confirm(`Êtes-vous sûr de vouloir supprimer "${player.name}" ?`)) {
-                window.teamManager.removePlayer(teamId, playerId);
+                window.teamsBackend.removePlayer(teamId, playerId);
                 showNotification('✅ Joueuse supprimée', 'success');
                 updatePlayersList(selectedTeamId);
             }
@@ -321,8 +323,8 @@
         // Synchronisation avec Supabase
         window.addEventListener('online', () => {
             console.log('✅ Connexion internet rétablie');
-            if (window.teamManager && window.supabaseSync?.isReady()) {
-                window.teamManager.syncWithSupabase().then(() => {
+            if (window.teamsBackend && window.supabaseSync?.isReady()) {
+                window.teamsBackend.syncWithSupabase().then(() => {
                     updateTeamsList();
                 });
             }
