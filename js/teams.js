@@ -66,7 +66,8 @@ class TeamsManager {
 
         // Charger les équipes disponibles
         await this.loadTeams();
-        await this.loadPlayerStats();
+        // TODO: Stats chargées depuis le match lui-même, pas besoin ici
+        // await this.loadPlayerStats();
 
         console.log('✅ TeamsManager initialisé');
     }
@@ -196,7 +197,7 @@ class TeamsManager {
 
         try {
             // Charger l'équipe
-            const { data: team, error: teamError } = await supabaseClient
+            const { data: team, error: teamError } = await window.supabaseSync.client
                 .from('teams')
                 .select('*')
                 .eq('id', teamId)
@@ -208,7 +209,7 @@ class TeamsManager {
             this.currentTeam = team;
 
             // Charger les joueuses
-            const { data: players, error: playersError } = await supabaseClient
+            const { data: players, error: playersError } = await window.supabaseSync.client
                 .from('players')
                 .select('*')
                 .eq('team_id', teamId)
@@ -219,7 +220,7 @@ class TeamsManager {
             this.players = players || [];
 
             // Charger la composition si elle existe
-            const { data: comp, error: compError } = await supabaseClient
+            const { data: comp, error: compError } = await window.supabaseSync.client
                 .from('compositions')
                 .select('*')
                 .eq('team_id', teamId)
@@ -279,7 +280,7 @@ class TeamsManager {
                 player_count: 0
             };
 
-            const { data: team, error } = await supabaseClient
+            const { data: team, error } = await window.supabaseSync.client
                 .from('teams')
                 .insert([newTeam])
                 .select()
@@ -316,7 +317,7 @@ class TeamsManager {
         if (!newName) return;
 
         try {
-            const { error } = await supabaseClient
+            const { error } = await window.supabaseSync.client
                 .from('teams')
                 .update({ name: newName })
                 .eq('id', this.currentTeamId);
@@ -346,19 +347,19 @@ class TeamsManager {
 
         try {
             // Supprimer les joueuses
-            await supabaseClient
+            await window.supabaseSync.client
                 .from('players')
                 .delete()
                 .eq('team_id', this.currentTeamId);
 
             // Supprimer les compositions
-            await supabaseClient
+            await window.supabaseSync.client
                 .from('compositions')
                 .delete()
                 .eq('team_id', this.currentTeamId);
 
             // Supprimer l'équipe
-            const { error } = await supabaseClient
+            const { error } = await window.supabaseSync.client
                 .from('teams')
                 .delete()
                 .eq('id', this.currentTeamId);
@@ -440,7 +441,7 @@ class TeamsManager {
                 position
             };
 
-            const { data: player, error } = await supabaseClient
+            const { data: player, error } = await window.supabaseSync.client
                 .from('players')
                 .insert([newPlayer])
                 .select()
@@ -450,7 +451,7 @@ class TeamsManager {
 
             // Mettre à jour le compteur d'équipe
             const newCount = this.players.length + 1;
-            await supabaseClient
+            await window.supabaseSync.client
                 .from('teams')
                 .update({ player_count: newCount })
                 .eq('id', this.currentTeamId);
@@ -569,7 +570,7 @@ class TeamsManager {
         }
 
         try {
-            const { error } = await supabaseClient
+            const { error } = await window.supabaseSync.client
                 .from('players')
                 .update({ name, number, position })
                 .eq('id', this.editingPlayerId);
@@ -609,7 +610,7 @@ class TeamsManager {
         }
 
         try {
-            const { error } = await supabaseClient
+            const { error } = await window.supabaseSync.client
                 .from('players')
                 .delete()
                 .eq('id', this.editingPlayerId);
@@ -622,7 +623,7 @@ class TeamsManager {
 
             // Mettre à jour le compteur
             const newCount = this.players.length;
-            await supabaseClient
+            await window.supabaseSync.client
                 .from('teams')
                 .update({ player_count: newCount })
                 .eq('id', this.currentTeamId);
@@ -673,7 +674,7 @@ class TeamsManager {
 
         try {
             // Désactiver la composition active actuelle
-            await supabaseClient
+            await window.supabaseSync.client
                 .from('compositions')
                 .update({ is_active: false })
                 .eq('team_id', this.currentTeamId)
@@ -687,7 +688,7 @@ class TeamsManager {
                 is_active: true
             };
 
-            const { error } = await supabaseClient
+            const { error } = await window.supabaseSync.client
                 .from('compositions')
                 .insert([composition]);
 
@@ -839,7 +840,7 @@ class TeamsManager {
      */
     async loadPlayerStats() {
         try {
-            const { data: stats, error } = await supabaseClient
+            const { data: stats, error } = await window.supabaseSync.client
                 .from('player_match_stats')
                 .select('*');
 
@@ -991,7 +992,7 @@ class TeamsManager {
      */
     async getAllTeams() {
         try {
-            const { data: teams } = await supabaseClient
+            const { data: teams } = await window.supabaseSync.client
                 .from('teams')
                 .select('*')
                 .order('created_at', { ascending: false });
