@@ -3,330 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚽ Équipes - Football Stats Manager</title>
+    <title>Gestion d'Équipe - Football Stats</title>
     <link rel="stylesheet" href="../css/style.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+    <link rel="stylesheet" href="../css/teams-style.css">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <h1>👥 Gestion des Équipes</h1>
-            <p>Créez et gérez vos équipes et joueuses</p>
+    <div class="container teams-container">
+        <!-- Header Navigation -->
+        <header class="teams-header">
+            <h1>⚽ Gestion d'Équipe</h1>
+            <nav class="team-nav">
+                <a href="../index.html" class="nav-btn">← Accueil</a>
+                <a href="composition.html" class="nav-btn">📋 Composition</a>
+                <a href="stats.html" class="nav-btn">📊 Stats</a>
+            </nav>
         </header>
 
-        <!-- Navigation -->
-        <nav class="nav-tabs">
-            <a href="../index.html" class="nav-link">🏠 Accueil</a>
-            <a href="teams.html" class="nav-link active">👥 Équipes</a>
-            <a href="composition.html" class="nav-link">📋 Compo</a>
-            <a href="match.html" class="nav-link">⚽ Match</a>
-            <a href="live.html" class="nav-link">📺 Live</a>
-            <a href="stats.html" class="nav-link">📊 Stats</a>
-        </nav>
-
-        <main class="main-content">
-            <!-- Section : Créer une nouvelle équipe -->
-            <section class="team-card">
-                <h2>➕ Créer une Nouvelle Équipe</h2>
-                <form id="createTeamForm" class="form-grid">
-                    <div class="form-group">
-                        <label for="teamName">Nom de l'équipe *</label>
-                        <input type="text" id="teamName" placeholder="Ex: U17 Filles" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="teamCategory">Catégorie</label>
-                        <input type="text" id="teamCategory" placeholder="Ex: Benjamine, Minime, etc.">
-                    </div>
-                    <div class="form-group">
-                        <label for="teamColor">Couleur</label>
-                        <input type="color" id="teamColor" value="#3498db">
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="grid-column: span 3;">✅ Créer l'équipe</button>
-                </form>
-            </section>
-
-            <!-- Section : Liste des équipes -->
-            <section class="team-card">
-                <h2>📋 Mes Équipes</h2>
-                <div id="teamsList" class="teams-grid">
-                    <p style="text-align: center; color: #bdc3c7; padding: 2rem;">Aucune équipe créée. Commencez par créer une équipe ci-dessus.</p>
-                </div>
-            </section>
-
-            <!-- Section : Détails équipe sélectionnée -->
-            <section class="team-card" id="selectedTeamSection" style="display: none;">
-                <h2>⚙️ Gestion de l'équipe : <span id="selectedTeamName"></span></h2>
+        <!-- Main Content -->
+        <main class="teams-main">
+            <!-- Panel Gauche: Sélection Équipe -->
+            <div class="team-panel left-panel">
+                <h2>📦 Équipes</h2>
                 
-                <!-- Ajouter une joueuse -->
-                <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px;">
-                    <h3>➕ Ajouter une Joueuse</h3>
-                    <form id="addPlayerForm" class="form-grid">
-                        <div class="form-group">
-                            <label for="playerName">Nom *</label>
-                            <input type="text" id="playerName" placeholder="Nom de la joueuse" required>
+                <!-- Sélecteur Équipe -->
+                <div class="team-selector">
+                    <label>Catégorie / Équipe :</label>
+                    <select id="teamSelect" onchange="teamsManager.selectTeam()">
+                        <option value="">-- Charger une équipe --</option>
+                    </select>
+                </div>
+
+                <!-- Actions Équipe -->
+                <div class="team-actions">
+                    <button class="btn btn-sm btn-primary" onclick="teamsManager.showCreateTeamForm()">
+                        ➕ Nouvelle Équipe
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="teamsManager.renameTeam()" id="renameTeamBtn" disabled>
+                        ✏️ Renommer
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="teamsManager.deleteTeam()" id="deleteTeamBtn" disabled>
+                        🗑️ Supprimer
+                    </button>
+                    <button class="btn btn-sm btn-success" onclick="teamsManager.downloadTeamBackup()" id="downloadTeamBtn" disabled>
+                        💾 Télécharger
+                    </button>
+                </div>
+
+                <!-- Liste des équipes -->
+                <div class="teams-list" id="teamsList"></div>
+            </div>
+
+            <!-- Panel Droit: Gestion Joueuses -->
+            <div class="team-panel right-panel">
+                <!-- Tabs -->
+                <div class="tabs-container">
+                    <button class="tab-btn active" onclick="teamsManager.switchTab('players')">
+                        👥 Joueuses ({count_players})
+                    </button>
+                    <button class="tab-btn" onclick="teamsManager.switchTab('composition')">
+                        📍 Composition ({count_compo})
+                    </button>
+                    <button class="tab-btn" onclick="teamsManager.switchTab('stats')">
+                        📈 Stats Joueuses
+                    </button>
+                </div>
+
+                <!-- TAB 1: Gestion Joueuses -->
+                <div class="tab-content active" id="tab-players">
+                    <div class="add-player-section">
+                        <h3>➕ Ajouter une Joueuse</h3>
+                        <div class="form-inline">
+                            <input type="text" id="playerName" placeholder="Nom" maxlength="30">
+                            <input type="number" id="playerNumber" placeholder="N°" min="1" max="99">
+                            <select id="playerPosition">
+                                <option value="">Position</option>
+                                <option value="GK">🥅 Gardien</option>
+                                <option value="DF">🛡️ Défenseur</option>
+                                <option value="MF">⚡ Milieu</option>
+                                <option value="FW">⚔️ Attaquant</option>
+                            </select>
+                            <button class="btn btn-xs btn-primary" onclick="teamsManager.addPlayer()">Ajouter</button>
                         </div>
-                        <div class="form-group">
-                            <label for="playerPosition">Position *</label>
-                            <select id="playerPosition" required>
-                                <option value="">-- Sélectionner --</option>
-                                <option value="gardienne">🥅 Gardienne</option>
-                                <option value="défenseuse">🛡️ Défenseuse</option>
-                                <option value="milieu">🎯 Milieu</option>
-                                <option value="attaquante">⚔️ Attaquante</option>
+                    </div>
+
+                    <!-- Filtre Position -->
+                    <div class="filter-section">
+                        <label>Filtrer :</label>
+                        <div class="filter-buttons">
+                            <button class="filter-btn active" onclick="teamsManager.filterByPosition('all')">
+                                Toutes ({count_all})
+                            </button>
+                            <button class="filter-btn" onclick="teamsManager.filterByPosition('GK')">
+                                🥅 Gardiens ({count_gk})
+                            </button>
+                            <button class="filter-btn" onclick="teamsManager.filterByPosition('DF')">
+                                🛡️ Défenseurs ({count_df})
+                            </button>
+                            <button class="filter-btn" onclick="teamsManager.filterByPosition('MF')">
+                                ⚡ Milieux ({count_mf})
+                            </button>
+                            <button class="filter-btn" onclick="teamsManager.filterByPosition('FW')">
+                                ⚔️ Attaquants ({count_fw})
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Liste Joueuses -->
+                    <div class="players-list" id="playersList">
+                        <p class="empty-state">Aucune joueuse. Commencez par créer une équipe ou ajouter des joueuses.</p>
+                    </div>
+                </div>
+
+                <!-- TAB 2: Composition -->
+                <div class="tab-content" id="tab-composition">
+                    <div class="composition-section">
+                        <h3>📍 Sélectionner 11 Titulaires</h3>
+                        <p class="hint">Cliquez sur une joueuse pour l'ajouter à la composition (max 11)</p>
+                        
+                        <div class="composition-selected">
+                            <h4>✅ Sélectionnées ({count_selected}/11)</h4>
+                            <div class="selected-players" id="selectedPlayers">
+                                <p class="empty-state">Aucune joueuse sélectionnée</p>
+                            </div>
+                        </div>
+
+                        <div class="composition-actions">
+                            <button class="btn btn-sm btn-success" onclick="teamsManager.saveComposition()">
+                                💾 Sauvegarder Composition
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="teamsManager.clearComposition()">
+                                🔄 Réinitialiser
+                            </button>
+                        </div>
+
+                        <div class="composition-field">
+                            <h4>🎯 Vue Terrain (4-2-3-1)</h4>
+                            <canvas id="fieldCanvas" width="300" height="400"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: Stats Joueuses -->
+                <div class="tab-content" id="tab-stats">
+                    <div class="stats-section">
+                        <h3>📈 Statistiques Individuelles</h3>
+                        <p class="hint">Stats cumulées de tous les matchs</p>
+                        
+                        <div class="stats-sort">
+                            <label>Trier par :</label>
+                            <select onchange="teamsManager.sortStats(this.value)">
+                                <option value="name">Nom (A-Z)</option>
+                                <option value="goals">Buts</option>
+                                <option value="assists">Passes décisives</option>
+                                <option value="playtime">Temps de jeu</option>
+                                <option value="yellowCards">Cartons jaunes</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label for="playerNumber">Numéro</label>
-                            <input type="number" id="playerNumber" min="1" max="99" placeholder="1-99">
-                        </div>
-                        <button type="submit" class="btn btn-success" style="grid-column: span 3;">✅ Ajouter</button>
-                    </form>
-                </div>
 
-                <!-- Liste des joueuses -->
-                <div>
-                    <h3>👥 Joueuses de l'équipe</h3>
-                    <div id="playersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
-                        <p style="text-align: center; color: #bdc3c7;">Aucune joueuse ajoutée.</p>
+                        <div class="stats-list" id="statsList">
+                            <p class="empty-state">Aucune joueuse avec statistiques</p>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Actions équipe -->
-                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #ecf0f1; display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <button class="btn btn-warning" id="editTeamBtn">✏️ Modifier</button>
-                    <button class="btn btn-danger" id="deleteTeamBtn">🗑️ Supprimer</button>
-                    <button class="btn btn-secondary" id="closeTeamBtn">✖️ Fermer</button>
-                </div>
-            </section>
+            </div>
         </main>
+
+        <!-- Modal: Créer Équipe -->
+        <div class="modal" id="createTeamModal">
+            <div class="modal-content modal-small">
+                <h2>➕ Créer une Nouvelle Équipe</h2>
+                <div class="form-group">
+                    <label>Nom de l'équipe :</label>
+                    <input type="text" id="newTeamName" placeholder="Ex: U18 Féminines" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>Catégorie :</label>
+                    <select id="newTeamCategory">
+                        <option value="">Créer une nouvelle catégorie...</option>
+                        <option value="U12">U12</option>
+                        <option value="U14">U14</option>
+                        <option value="U16">U16</option>
+                        <option value="U18">U18</option>
+                        <option value="Seniors">Seniors</option>
+                        <option value="Masters">Masters</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Couleur principale :</label>
+                    <input type="color" id="teamColor" value="#2196F3">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-primary" onclick="teamsManager.createTeam()">Créer</button>
+                    <button class="btn btn-secondary" onclick="teamsManager.closeModal('createTeamModal')">Annuler</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Éditer Joueuse -->
+        <div class="modal" id="editPlayerModal">
+            <div class="modal-content modal-small">
+                <h2>✏️ Éditer Joueuse</h2>
+                <div class="form-group">
+                    <label>Nom :</label>
+                    <input type="text" id="editPlayerName" maxlength="30">
+                </div>
+                <div class="form-group">
+                    <label>Numéro :</label>
+                    <input type="number" id="editPlayerNumber" min="1" max="99">
+                </div>
+                <div class="form-group">
+                    <label>Position :</label>
+                    <select id="editPlayerPosition">
+                        <option value="GK">🥅 Gardien</option>
+                        <option value="DF">🛡️ Défenseur</option>
+                        <option value="MF">⚡ Milieu</option>
+                        <option value="FW">⚔️ Attaquant</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-primary" onclick="teamsManager.saveEditPlayer()">Sauvegarder</button>
+                    <button class="btn btn-danger" onclick="teamsManager.deletePlayer()">Supprimer</button>
+                    <button class="btn btn-secondary" onclick="teamsManager.closeModal('editPlayerModal')">Annuler</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification -->
+        <div id="notification" class="notification"></div>
     </div>
 
     <!-- Scripts -->
-    <script src="../js/storage.js"></script>
-    <script src="../js/team-manager.js"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/data-manager.js"></script>
+    <script src="../js/sync-manager.js"></script>
     <script src="../js/notification.js"></script>
-    
-    <script>
-        let selectedTeamId = null;
-
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', function() {
-            updateTeamsList();
-            setupEventListeners();
-            
-            // Auto-sync
-            if (window.teamManager) {
-                window.teamManager.enableAutoSync(15000);
-            }
-        });
-
-        // ===== ÉVÉNEMENTS FORMULAIRE =====
-
-        function setupEventListeners() {
-            // Créer équipe
-            document.getElementById('createTeamForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                createNewTeam();
-            });
-
-            // Ajouter joueuse
-            document.getElementById('addPlayerForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                addNewPlayer();
-            });
-
-            // Actions équipe
-            document.getElementById('editTeamBtn').addEventListener('click', editTeam);
-            document.getElementById('deleteTeamBtn').addEventListener('click', deleteTeam);
-            document.getElementById('closeTeamBtn').addEventListener('click', closeTeamSelection);
-        }
-
-        // ===== GESTION ÉQUIPES =====
-
-        function createNewTeam() {
-            const name = document.getElementById('teamName').value.trim();
-            const category = document.getElementById('teamCategory').value.trim();
-            const color = document.getElementById('teamColor').value;
-
-            if (!name) {
-                showNotification('Veuillez entrer un nom d\'équipe', 'warning');
-                return;
-            }
-
-            const team = window.teamManager.createTeam(name, category, color);
-            if (team) {
-                showNotification(`✅ Équipe "${name}" créée !`, 'success');
-                document.getElementById('createTeamForm').reset();
-                updateTeamsList();
-                selectTeam(team.id);
-            } else {
-                showNotification('Erreur lors de la création', 'error');
-            }
-        }
-
-        function updateTeamsList() {
-            const container = document.getElementById('teamsList');
-            const teams = window.teamManager.getAllTeams();
-
-            if (teams.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #bdc3c7; padding: 2rem; grid-column: 1/-1;">Aucune équipe créée. Commencez par créer une équipe ci-dessus.</p>';
-                return;
-            }
-
-            container.innerHTML = '';
-            teams.forEach(team => {
-                const card = document.createElement('div');
-                card.className = 'team-card-item';
-                card.style.cssText = `
-                    padding: 1.5rem;
-                    border: 2px solid ${team.color};
-                    border-radius: 8px;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    background: white;
-                `;
-                card.onmouseover = () => card.style.boxShadow = `0 4px 12px rgba(0,0,0,0.15)`;
-                card.onmouseout = () => card.style.boxShadow = 'none';
-                
-                card.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-                        <div style="width: 40px; height: 40px; background: ${team.color}; border-radius: 50%;"></div>
-                        <div>
-                            <h3 style="margin: 0; font-size: 1.1rem;">${team.name}</h3>
-                            <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">${team.category || 'Sans catégorie'}</p>
-                        </div>
-                    </div>
-                    <p style="margin: 0.5rem 0 0 0; color: #95a5a6; font-size: 0.85rem;">👥 ${team.players?.length || 0} joueuses</p>
-                `;
-                
-                card.onclick = () => selectTeam(team.id);
-                container.appendChild(card);
-            });
-        }
-
-        function selectTeam(teamId) {
-            selectedTeamId = teamId;
-            const team = window.teamManager.getTeam(teamId);
-            
-            if (!team) return;
-
-            document.getElementById('selectedTeamName').textContent = team.name;
-            updatePlayersList(teamId);
-            document.getElementById('selectedTeamSection').style.display = 'block';
-            document.getElementById('selectedTeamSection').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function closeTeamSelection() {
-            selectedTeamId = null;
-            document.getElementById('selectedTeamSection').style.display = 'none';
-            document.getElementById('addPlayerForm').reset();
-        }
-
-        function editTeam() {
-            const team = window.teamManager.getTeam(selectedTeamId);
-            const newName = prompt('Nouveau nom d\'équipe :', team.name);
-            if (newName) {
-                window.teamManager.updateTeam(selectedTeamId, { name: newName });
-                showNotification('✅ Équipe mise à jour', 'success');
-                updateTeamsList();
-                selectTeam(selectedTeamId);
-            }
-        }
-
-        function deleteTeam() {
-            const team = window.teamManager.getTeam(selectedTeamId);
-            if (confirm(`⚠️ Êtes-vous sûr de vouloir supprimer l'équipe "${team.name}" et toutes ses joueuses ?`)) {
-                window.teamManager.deleteTeam(selectedTeamId);
-                showNotification('✅ Équipe supprimée', 'success');
-                closeTeamSelection();
-                updateTeamsList();
-            }
-        }
-
-        // ===== GESTION JOUEUSES =====
-
-        function addNewPlayer() {
-            const name = document.getElementById('playerName').value.trim();
-            const position = document.getElementById('playerPosition').value;
-            const number = document.getElementById('playerNumber').value;
-
-            if (!name || !position) {
-                showNotification('Veuillez remplir tous les champs obligatoires', 'warning');
-                return;
-            }
-
-            const player = window.teamManager.addPlayerToTeam(selectedTeamId, name, position, number);
-            if (player) {
-                showNotification(`✅ Joueuse "${name}" ajoutée !`, 'success');
-                document.getElementById('addPlayerForm').reset();
-                updatePlayersList(selectedTeamId);
-            }
-        }
-
-        function updatePlayersList(teamId) {
-            const container = document.getElementById('playersList');
-            const players = window.teamManager.getTeamPlayers(teamId);
-
-            if (players.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #bdc3c7; padding: 2rem; grid-column: 1/-1;">Aucune joueuse ajoutée.</p>';
-                return;
-            }
-
-            container.innerHTML = '';
-            players.forEach(player => {
-                const card = document.createElement('div');
-                card.className = 'player-card';
-                card.style.cssText = `
-                    padding: 1rem;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                `;
-                
-                const positions = { gardienne: '🥅', défenseuse: '🛡️', milieu: '🎯', attaquante: '⚔️' };
-                
-                card.innerHTML = `
-                    <div>
-                        <h4 style="margin: 0; font-weight: bold;">${positions[player.position] || '⚽'} ${player.name}</h4>
-                        <p style="margin: 0.25rem 0 0 0; color: #7f8c8d; font-size: 0.9rem;">${player.position}${player.number ? ' - N°' + player.number : ''}</p>
-                    </div>
-                    <button onclick="removePlayer('${teamId}', '${player.id}')" class="btn btn-small btn-danger">🗑️</button>
-                `;
-                
-                container.appendChild(card);
-            });
-        }
-
-        function removePlayer(teamId, playerId) {
-            const player = window.teamManager.getPlayer(teamId, playerId);
-            if (confirm(`Êtes-vous sûr de vouloir supprimer "${player.name}" ?`)) {
-                window.teamManager.removePlayer(teamId, playerId);
-                showNotification('✅ Joueuse supprimée', 'success');
-                updatePlayersList(selectedTeamId);
-            }
-        }
-
-        // Notification helper
-        function showNotification(message, type = 'info') {
-            if (typeof window.NotificationManager !== 'undefined' && window.NotificationManager.show) {
-                window.NotificationManager.show(message, type);
-            } else {
-                console.log(`[${type.toUpperCase()}] ${message}`);
-                alert(message);
-            }
-        }
-
-        // Synchronisation avec Supabase
-        window.addEventListener('online', () => {
-            console.log('✅ Connexion internet rétablie');
-            if (window.teamManager && window.supabaseSync?.isReady()) {
-                window.teamManager.syncWithSupabase().then(() => {
-                    updateTeamsList();
-                });
-            }
-        });
-    </script>
+    <script src="../js/teams.js"></script>
 </body>
 </html>
