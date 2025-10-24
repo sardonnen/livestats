@@ -1,8 +1,8 @@
 // ===== TEAM MANAGER MODULE =====
-// Gestion complète des équipes et joueuses avec sync local/Supabase
+// Gestion complete des equipes et joueuses avec sync local/Supabase
 
 /**
- * Structure des données locales :
+ * Structure des donnees locales :
  * teams: {
  *   [teamId]: {
  *     id, name, category, color, logo_url,
@@ -19,13 +19,30 @@ class TeamManager {
         this.syncQueue = [];
         this.lastSyncTime = localStorage.getItem('teamManager_lastSync') || null;
         
-        console.log('📦 TeamManager initialisé');
+        console.log('[TeamManager] Initialise');
+    }
+
+    /**
+     * Generer un UUID v4 valide (compatible Supabase)
+     */
+    generateUUID() {
+        // Utiliser crypto.randomUUID() si disponible (navigateurs modernes)
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        
+        // Fallback: generer UUID v4 manuellement
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
     }
 
     // ===== GESTION LOCALE =====
 
     /**
-     * Charger les équipes depuis localStorage
+     * Charger les equipes depuis localStorage
      */
     loadLocalTeams() {
         const data = localStorage.getItem('footballStats_teams');
@@ -33,7 +50,7 @@ class TeamManager {
     }
 
     /**
-     * Sauvegarder les équipes en localStorage
+     * Sauvegarder les equipes en localStorage
      */
     saveLocalTeams() {
         localStorage.setItem('footballStats_teams', JSON.stringify(this.localData));
@@ -42,10 +59,10 @@ class TeamManager {
     }
 
     /**
-     * Créer une nouvelle équipe
+     * Creer une nouvelle equipe
      */
     createTeam(name, category = '', color = '#3498db') {
-        const teamId = 'team_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        const teamId = this.generateUUID();
         
         const team = {
             id: teamId,
@@ -63,19 +80,19 @@ class TeamManager {
         this.saveLocalTeams();
         this.queueForSync('createTeam', team);
 
-        console.log('✅ Équipe créée localement:', name);
+        console.log('[OK] Equipe creee localement:', name);
         return team;
     }
 
     /**
-     * Récupérer une équipe
+     * Recuperer une equipe
      */
     getTeam(teamId) {
         return this.localData[teamId] || null;
     }
 
     /**
-     * Lister toutes les équipes
+     * Lister toutes les equipes
      */
     getAllTeams() {
         return Object.values(this.localData).sort((a, b) => 
@@ -84,58 +101,56 @@ class TeamManager {
     }
 
     /**
-     * Supprimer une équipe
+     * Supprimer une equipe
      */
     deleteTeam(teamId) {
         if (!this.localData[teamId]) {
-            console.warn('⚠️ Équipe non trouvée:', teamId);
+            console.warn('[WARNING] Equipe non trouvee:', teamId);
             return false;
         }
 
-        const teamName = this.localData[teamId].name;
         delete this.localData[teamId];
         this.saveLocalTeams();
-        this.queueForSync('deleteTeam', { id: teamId, name: teamName });
-
-        console.log('✅ Équipe supprimée:', teamName);
+        this.queueForSync('deleteTeam', { id: teamId });
+        
+        console.log('[OK] Equipe supprimee:', teamId);
         return true;
     }
 
     /**
-     * Mettre à jour une équipe
+     * Modifier une equipe
      */
     updateTeam(teamId, updates) {
-        if (!this.localData[teamId]) {
-            console.warn('⚠️ Équipe non trouvée:', teamId);
+        const team = this.localData[teamId];
+        if (!team) {
+            console.warn('[WARNING] Equipe non trouvee:', teamId);
             return null;
         }
 
-        this.localData[teamId] = {
-            ...this.localData[teamId],
-            ...updates,
-            updated_at: new Date().toISOString()
-        };
-
+        Object.assign(team, updates);
+        team.updated_at = new Date().toISOString();
+        team.synced = false;
+        
         this.saveLocalTeams();
-        this.queueForSync('updateTeam', this.localData[teamId]);
+        this.queueForSync('updateTeam', team);
 
-        console.log('✅ Équipe mise à jour:', updates);
-        return this.localData[teamId];
+        console.log('[OK] Equipe mise a jour:', team.name);
+        return team;
     }
 
-    // ===== GESTION DES JOUEUSES =====
+    // ===== GESTION JOUEUSES =====
 
     /**
-     * Ajouter une joueuse à une équipe
+     * Ajouter une joueuse a une equipe
      */
-    addPlayerToTeam(teamId, name, position, number = null) {
+    addPlayerToTeam(teamId, name, position, number = 0) {
         const team = this.getTeam(teamId);
         if (!team) {
-            console.warn('⚠️ Équipe non trouvée:', teamId);
+            console.warn('[WARNING] Equipe non trouvee:', teamId);
             return null;
         }
 
-        const playerId = 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        const playerId = this.generateUUID();
         const player = {
             id: playerId,
             team_id: teamId,
@@ -151,12 +166,12 @@ class TeamManager {
         this.saveLocalTeams();
         this.queueForSync('addPlayer', player);
 
-        console.log('✅ Joueuse ajoutée:', name, 'à', team.name);
+        console.log('[OK] Joueuse ajoutee:', name, 'a', team.name);
         return player;
     }
 
     /**
-     * Récupérer une joueuse
+     * Recuperer une joueuse
      */
     getPlayer(teamId, playerId) {
         const team = this.getTeam(teamId);
@@ -165,7 +180,7 @@ class TeamManager {
     }
 
     /**
-     * Lister les joueuses d'une équipe
+     * Lister les joueuses d'une equipe
      */
     getTeamPlayers(teamId) {
         const team = this.getTeam(teamId);
@@ -175,216 +190,203 @@ class TeamManager {
     /**
      * Supprimer une joueuse
      */
-    removePlayer(teamId, playerId) {
+    deletePlayer(teamId, playerId) {
         const team = this.getTeam(teamId);
-        if (!team) return false;
+        if (!team) {
+            console.warn('[WARNING] Equipe non trouvee:', teamId);
+            return false;
+        }
 
-        const playerIndex = team.players.findIndex(p => p.id === playerId);
-        if (playerIndex === -1) return false;
+        const index = team.players.findIndex(p => p.id === playerId);
+        if (index === -1) {
+            console.warn('[WARNING] Joueuse non trouvee:', playerId);
+            return false;
+        }
 
-        const player = team.players[playerIndex];
-        team.players.splice(playerIndex, 1);
+        team.players.splice(index, 1);
         team.updated_at = new Date().toISOString();
         this.saveLocalTeams();
-        this.queueForSync('removePlayer', { ...player, removed: true });
+        this.queueForSync('deletePlayer', { id: playerId, team_id: teamId });
 
-        console.log('✅ Joueuse supprimée:', player.name);
+        console.log('[OK] Joueuse supprimee:', playerId);
         return true;
     }
 
     /**
-     * Mettre à jour une joueuse
+     * Modifier une joueuse
      */
     updatePlayer(teamId, playerId, updates) {
         const team = this.getTeam(teamId);
-        if (!team) return null;
+        if (!team) {
+            console.warn('[WARNING] Equipe non trouvee:', teamId);
+            return null;
+        }
 
         const player = team.players.find(p => p.id === playerId);
-        if (!player) return null;
+        if (!player) {
+            console.warn('[WARNING] Joueuse non trouvee:', playerId);
+            return null;
+        }
 
-        Object.assign(player, updates, {
-            updated_at: new Date().toISOString()
-        });
-
+        Object.assign(player, updates);
+        player.synced = false;
         team.updated_at = new Date().toISOString();
+        
         this.saveLocalTeams();
         this.queueForSync('updatePlayer', player);
 
-        console.log('✅ Joueuse mise à jour:', player.name);
+        console.log('[OK] Joueuse mise a jour:', player.name);
         return player;
     }
 
     // ===== SYNCHRONISATION SUPABASE =====
 
     /**
-     * Ajouter à la queue de synchronisation
+     * Ajouter une action a la queue de sync
      */
-    queueForSync(operation, data) {
-        this.syncQueue.push({
-            operation,
-            data,
-            timestamp: new Date().toISOString(),
-            retries: 0
-        });
+    queueForSync(action, data) {
+        this.syncQueue.push({ action, data, timestamp: Date.now() });
     }
 
     /**
-     * Synchroniser avec Supabase (bidirectionnel)
+     * Synchroniser avec Supabase
      */
     async syncWithSupabase() {
-        if (!window.supabaseSync || !window.supabaseSync.isReady()) {
-            console.warn('⚠️ Supabase non prêt pour la sync');
-            return false;
+        if (this.syncInProgress) {
+            console.log('[INFO] Sync deja en cours, skip');
+            return;
         }
 
-        if (this.syncInProgress) {
-            console.log('⏳ Synchronisation déjà en cours');
-            return false;
+        if (!window.supabaseSync) {
+            console.warn('[WARNING] Module SupabaseSync non disponible');
+            return;
         }
 
         this.syncInProgress = true;
-        let syncedCount = 0;
-        let errorCount = 0;
 
         try {
-            // 1. Uploader les changements locaux
-            for (const operation of this.syncQueue) {
-                try {
-                    const result = await window.supabaseSync.executeSync(operation);
-                    if (result.success) {
-                        syncedCount++;
-                        // Marquer comme synced
-                        if (operation.data.id) {
-                            const parts = operation.data.id.split('_');
-                            if (parts[0] === 'team') {
-                                if (this.localData[operation.data.id]) {
-                                    this.localData[operation.data.id].synced = true;
-                                }
-                            } else if (parts[0] === 'player') {
-                                // Trouver et marquer le joueur
-                                for (const team of Object.values(this.localData)) {
-                                    const player = team.players.find(p => p.id === operation.data.id);
-                                    if (player) {
-                                        player.synced = true;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        errorCount++;
+            // 1. Upload local -> Supabase
+            let uploadCount = 0;
+            const unsyncedTeams = Object.values(this.localData).filter(t => !t.synced);
+            
+            for (const team of unsyncedTeams) {
+                await window.supabaseSync.addTeamRemote(team);
+                team.synced = true;
+                
+                for (const player of team.players.filter(p => !p.synced)) {
+                    await window.supabaseSync.addPlayerRemote(player);
+                    player.synced = true;
+                    uploadCount++;
+                }
+                uploadCount++;
+            }
+
+            // 2. Download Supabase -> local
+            const remoteTeams = await window.supabaseSync.getTeamsRemote();
+            let downloadCount = 0;
+
+            for (const remoteTeam of remoteTeams) {
+                if (!this.localData[remoteTeam.id]) {
+                    this.localData[remoteTeam.id] = {
+                        ...remoteTeam,
+                        players: [],
+                        synced: true
+                    };
+                    downloadCount++;
+                }
+
+                const remotePlayers = await window.supabaseSync.getPlayersRemote(remoteTeam.id);
+                const localTeam = this.localData[remoteTeam.id];
+
+                for (const remotePlayer of remotePlayers) {
+                    if (!localTeam.players.find(p => p.id === remotePlayer.id)) {
+                        localTeam.players.push({ ...remotePlayer, synced: true });
+                        downloadCount++;
                     }
-                } catch (error) {
-                    console.error('❌ Erreur sync opération:', error);
-                    errorCount++;
                 }
             }
 
-            // 2. Télécharger les données de Supabase
-            const remoteTeams = await window.supabaseSync.downloadTeams();
-            if (remoteTeams && Array.isArray(remoteTeams)) {
-                this.mergeRemoteTeams(remoteTeams);
+            if (uploadCount > 0 || downloadCount > 0) {
+                this.saveLocalTeams();
             }
 
-            this.syncQueue = [];
-            this.saveLocalTeams();
-
-            console.log(`✅ Sync complète: ${syncedCount} uploads, ${remoteTeams?.length || 0} téléchargements`);
-            return true;
+            console.log('[OK] Sync complete:', uploadCount, 'uploads,', downloadCount, 'telechargements');
 
         } catch (error) {
-            console.error('❌ Erreur synchronisation:', error);
-            return false;
+            console.error('[ERROR] Erreur sync Supabase:', error);
         } finally {
             this.syncInProgress = false;
         }
     }
 
     /**
-     * Fusionner les données téléchargées de Supabase
+     * Activer la synchronisation automatique
      */
-    mergeRemoteTeams(remoteTeams) {
-        for (const remoteTeam of remoteTeams) {
-            const localTeam = this.localData[remoteTeam.id];
-            
-            if (!localTeam || new Date(remoteTeam.updated_at) > new Date(localTeam.updated_at)) {
-                // Utiliser la version distante si plus récente
-                this.localData[remoteTeam.id] = {
-                    ...remoteTeam,
-                    synced: true
-                };
-            }
-        }
-    }
-
-    /**
-     * Synchronisation automatique (all les 30 secondes si changements)
-     */
-    enableAutoSync(intervalMs = 30000) {
-        setInterval(() => {
-            if (this.syncQueue.length > 0 && navigator.onLine) {
-                this.syncWithSupabase();
-            }
-        }, intervalMs);
-
-        console.log('✅ Auto-sync activée');
-    }
-
-    // ===== UTILITAIRES =====
-
-    /**
-     * Export des équipes
-     */
-    export() {
-        return {
-            teams: this.localData,
-            exportedAt: new Date().toISOString(),
-            version: '1.0'
-        };
-    }
-
-    /**
-     * Import des équipes
-     */
-    import(data) {
-        if (!data.teams) {
-            console.error('❌ Format d\'import invalide');
-            return false;
+    enableAutoSync(intervalSeconds = 30) {
+        if (this.autoSyncInterval) {
+            clearInterval(this.autoSyncInterval);
         }
 
-        this.localData = data.teams;
-        this.saveLocalTeams();
+        this.autoSyncInterval = setInterval(() => {
+            this.syncWithSupabase();
+        }, intervalSeconds * 1000);
+
+        console.log('[OK] Auto-sync activee');
         
-        // Queue tout pour sync
-        for (const team of Object.values(this.localData)) {
-            this.queueForSync('createTeam', team);
-            for (const player of team.players || []) {
-                this.queueForSync('addPlayer', player);
-            }
-        }
-
-        console.log('✅ Équipes importées:', Object.keys(this.localData).length);
-        return true;
+        // Sync immediate au demarrage
+        this.syncWithSupabase();
     }
 
     /**
-     * Vider toutes les données
+     * Desactiver la synchronisation automatique
      */
-    clear() {
-        if (confirm('⚠️ Êtes-vous sûr de vouloir supprimer toutes les équipes et joueuses ?')) {
+    disableAutoSync() {
+        if (this.autoSyncInterval) {
+            clearInterval(this.autoSyncInterval);
+            this.autoSyncInterval = null;
+            console.log('[OK] Auto-sync desactivee');
+        }
+    }
+
+    /**
+     * Forcer une synchronisation complete
+     */
+    async forceSync() {
+        console.log('[INFO] Synchronisation forcee...');
+        await this.syncWithSupabase();
+    }
+
+    /**
+     * Reinitialiser toutes les donnees locales
+     */
+    resetLocalData() {
+        if (confirm('ATTENTION: Cette action va supprimer toutes vos donnees locales. Continuer ?')) {
+            localStorage.removeItem('footballStats_teams');
+            localStorage.removeItem('teamManager_lastSync');
             this.localData = {};
-            this.syncQueue = [];
-            this.saveLocalTeams();
-            console.log('✅ Données effacées');
+            this.lastSyncTime = null;
+            console.log('[OK] Donnees locales reinitialisees');
             return true;
         }
         return false;
     }
+
+    /**
+     * Obtenir des statistiques
+     */
+    getStats() {
+        const teams = this.getAllTeams();
+        return {
+            totalTeams: teams.length,
+            totalPlayers: teams.reduce((sum, t) => sum + t.players.length, 0),
+            syncedTeams: teams.filter(t => t.synced).length,
+            lastSync: this.lastSyncTime
+        };
+    }
 }
 
-// ===== INITIALISATION GLOBALE =====
-
+// Exporter l'instance globale
 if (typeof window !== 'undefined') {
     window.teamManager = new TeamManager();
-    console.log('📦 Module TeamManager chargé');
+    console.log('[TeamManager] Module charge');
 }

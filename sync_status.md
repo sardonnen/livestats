@@ -1,27 +1,50 @@
 # 🔄 SYNC STATUS - Football Stats Manager
 
-**Date dernière mise à jour:** 24 Oct 2025 - 15h30  
-**État général:** ✅ Teams Page Complète + Fix Supabase  
-**Architecture:** Frontend/Backend séparé + Supabase + Design Mobile: OBLIGATOIRE pas de fonction js dans le fichier html
+**Date dernière mise à jour:** 24 Oct 2025 - 16h00  
+**État général:** 🔧 BUG UUID EN COURS DE CORRECTION  
+**Architecture:** Frontend/Backend séparé + Supabase + Design Mobile
+
+**OBLIGATOIRE:** Fichiers JavaScript à sauvegarder en UTF-8
 
 ---
 
-## 📊 TABLEAU DE BORD - ÉTAT ACTUEL
+## 🚨 HISTORIQUE DES CORRECTIONS
 
-| Fichier | État | Modifié | Notes |
-|---------|------|---------|-------|
-| **css/style.css** | ✅ OK | - | Inchangé |
-| **pages/teams.html** | ✅ CORRIGÉ | 24 Oct | HTML pur + chemins ../js/ |
-| **js/teams.js** | ✅ NOUVEAU | 24 Oct | Classe TeamsPageManager |
-| **js/supabase-sync.js** | ✅ CORRIGÉ | 24 Oct | Conversion positions FR↔Code |
+### ✅ Correction 1 (24 Oct 15h30): Champ `number` joueuses
+**Problème:** `null value in column "number" violates not-null constraint`  
+**Solution:** Valeur par défaut 0 au lieu de null  
+**Fichiers modifiés:**
+- `team-manager.js` ligne 144 (ancien 161)
+- `teams.html` lignes 79-80
+**Status:** ✅ RÉSOLU
+
+### 🔧 Correction 2 (24 Oct 16h00): Format UUID invalide
+**Problème:** `invalid input syntax for type uuid: "team_1761236273083_k50fbiy66"`  
+**Cause:** IDs générés comme chaînes personnalisées au lieu d'UUIDs RFC4122  
+**Solution:** Fonction `generateUUID()` pour créer des UUIDs valides  
+**Fichiers modifiés:**
+- `team-manager.js` lignes 25-40 (nouvelle fonction)
+- `team-manager.js` ligne 65 (createTeam)
+- `team-manager.js` ligne 155 (addPlayerToTeam)
+**Status:** 🔧 EN COURS DE TEST
+
+---
+
+## 📊 TABLEAU DE BORD - FICHIERS PROJET
+
+| Fichier | État | Dernière Modif | Notes |
+|---------|------|----------------|-------|
+| **js/team-manager.js** | 🔧 CORRIGÉ UUID | 24 Oct 16h00 | generateUUID() ajoutée |
+| **teams.html** | ✅ CORRIGÉ | 24 Oct 15h30 | Champ number OK |
+| **css/style.css** | ✅ OK | 24 Oct | Mobile optimisé |
 | **index.html** | ✅ OK | - | Inchangé |
 | **js/app.js** | ✅ OK | - | Inchangé |
-| **js/team-manager.js** | ✅ OK | - | Inchangé (compatible) |
 | **js/data-manager.js** | ✅ OK | - | Inchangé |
 | **js/sync-manager.js** | ✅ OK | - | Inchangé |
 | **js/notification.js** | ✅ OK | - | Inchangé |
 | **js/pdf-export.js** | ✅ OK | - | Inchangé |
-| **js/supabase-config.js** | ✅ OK | - | Clés configurées |
+| **js/supabase-config.js** | ⚠️ À CONFIGURER | - | Clés API Supabase |
+| **js/supabase-sync.js** | ✅ OK | - | Compatible UUID |
 | **pages/live-match.html** | ✅ OK | - | Inchangé |
 | **js/live-match.js** | ✅ OK | - | Inchangé |
 | **pages/spectator.html** | ✅ OK | - | Inchangé |
@@ -35,285 +58,386 @@
 
 ---
 
-## 📋 ARCHITECTURE RÉSUMÉE
+## 🔧 DÉTAIL CORRECTION UUID
+
+### Problème identifié:
+
+**Logs d'erreur:**
+```javascript
+POST https://[...]/rest/v1/players 400 (Bad Request)
+Error: invalid input syntax for type uuid: "team_1761236273083_k50fbiy66"
+```
+
+**Cause racine:**
+Les IDs d'équipes et joueuses étaient générés comme ceci:
+```javascript
+// AVANT (incorrect)
+const teamId = 'team_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+// Résultat: "team_1761236273083_k50fbiy66"
+
+const playerId = 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+// Résultat: "player_1761236273083_abc123xyz"
+```
+
+**Problème:** Supabase utilise PostgreSQL qui exige des UUIDs au format RFC4122:
+```
+Format requis: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+Exemple valide: 550e8400-e29b-41d4-a716-446655440000
+```
+
+### Solution appliquée:
+
+**1. Nouvelle fonction `generateUUID()` (lignes 25-40):**
+```javascript
+generateUUID() {
+    // Utiliser crypto.randomUUID() si disponible (navigateurs modernes)
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    
+    // Fallback: générer UUID v4 manuellement
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+```
+
+**2. Modification createTeam (ligne 65):**
+```javascript
+// AVANT
+const teamId = 'team_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+// APRÈS
+const teamId = this.generateUUID();
+```
+
+**3. Modification addPlayerToTeam (ligne 155):**
+```javascript
+// AVANT
+const playerId = 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+// APRÈS
+const playerId = this.generateUUID();
+```
+
+### Résultat attendu:
+
+✅ Équipes créées avec UUID valide: `550e8400-e29b-41d4-a716-446655440000`  
+✅ Joueuses créées avec UUID valide: `6ba7b810-9dad-11d1-80b4-00c04fd430c8`  
+✅ Synchronisation Supabase sans erreur 400  
+✅ Aucune erreur "invalid input syntax for type uuid"
+
+---
+
+## 🧪 MIGRATION DES DONNÉES EXISTANTES
+
+### ⚠️ ATTENTION: Données locales incompatibles
+
+Si vous aviez **déjà créé des équipes** avec l'ancienne version, elles ont des IDs au format `team_XXXXX` qui ne pourront **PAS** être synchronisées avec Supabase.
+
+### Options de migration:
+
+#### Option 1: Reset complet (RECOMMANDÉ pour test)
+```javascript
+// Dans la console du navigateur (F12)
+localStorage.removeItem('footballStats_teams');
+localStorage.removeItem('teamManager_lastSync');
+location.reload();
+```
+
+#### Option 2: Migration manuelle (si données importantes)
+```javascript
+// Script de migration (à exécuter dans la console)
+function migrateTeamIds() {
+    const data = JSON.parse(localStorage.getItem('footballStats_teams') || '{}');
+    const newData = {};
+    
+    Object.values(data).forEach(team => {
+        // Générer un nouvel UUID pour l'équipe
+        const newTeamId = crypto.randomUUID();
+        const newTeam = {...team, id: newTeamId};
+        
+        // Mettre à jour les team_id des joueuses
+        newTeam.players = newTeam.players.map(player => ({
+            ...player,
+            id: crypto.randomUUID(),
+            team_id: newTeamId
+        }));
+        
+        newData[newTeamId] = newTeam;
+    });
+    
+    localStorage.setItem('footballStats_teams', JSON.stringify(newData));
+    console.log('✅ Migration terminée');
+}
+
+// Exécuter la migration
+migrateTeamIds();
+location.reload();
+```
+
+#### Option 3: Recréer manuellement
+- Supprimer les anciennes équipes
+- Recréer avec la nouvelle version
+- Ré-ajouter les joueuses
+
+---
+
+## 📋 ARCHITECTURE DÉTAILLÉE
 
 ```
-Frontend (Présentation)
-├── HTML purs (zéro JS dans les fichiers)
-│   ├── index.html
-│   ├── pages/live-match.html
-│   ├── pages/spectator.html
-│   ├── pages/team.html (ancien)
-│   ├── pages/teams.html ✅ CORRIGÉ
-│   ├── pages/composition.html
-│   └── pages/stats.html
+📁 Football Stats Manager
 │
-├── Frontend JS (Logique UI par page)
-│   ├── js/app.js → index.html
-│   ├── js/live-match.js → live-match.html
-│   ├── js/spectator.js → spectator.html
-│   ├── js/team.js → team.html (ancien)
-│   ├── js/teams.js → teams.html ✅ NOUVEAU
-│   ├── js/composition.js → composition.html
-│   └── js/stats.js → stats.html
+├── 📄 index.html (Page d'accueil)
 │
-└── Backend JS (Réutilisable, aucune UI)
-    ├── js/supabase-config.js (CONFIG)
-    ├── js/data-manager.js (CRUD Supabase)
-    ├── js/sync-manager.js (Sync temps réel)
-    ├── js/supabase-sync.js (Bidirectionnel) ✅ CORRIGÉ
-    ├── js/team-manager.js (Logique métier équipe)
-    ├── js/notification.js (Notifications)
-    └── js/pdf-export.js (Export PDF)
-
-Style
-└── css/style.css
+├── 📁 pages/ (HTML pur - ZÉRO JS inline)
+│   ├── teams.html ✅ (Gestion équipes - champ number corrigé)
+│   ├── composition.html
+│   ├── live-match.html
+│   ├── spectator.html
+│   ├── stats.html
+│   └── team.html (ancien - conservé)
+│
+├── 📁 js/ (JavaScript modulaire)
+│   │
+│   ├── 🎮 FRONTEND (UI par page)
+│   │   ├── app.js → index.html
+│   │   ├── teams.js → teams.html
+│   │   ├── composition.js → composition.html
+│   │   ├── live-match.js → live-match.html
+│   │   ├── spectator.js → spectator.html
+│   │   ├── stats.js → stats.html
+│   │   └── team.js → team.html (ancien)
+│   │
+│   └── 🔧 BACKEND (Logique métier)
+│       ├── supabase-config.js (Configuration API)
+│       ├── data-manager.js (CRUD matches/stats)
+│       ├── team-manager.js ✨ CORRIGÉ UUID (CRUD équipes)
+│       ├── supabase-sync.js (Sync bidirectionnelle)
+│       ├── sync-manager.js (Coordination)
+│       ├── notification.js (Notifications)
+│       └── pdf-export.js (Export PDF)
+│
+└── 📁 css/
+    └── style.css (Unique - Mobile First)
 ```
 
 ---
 
-## 🔗 DÉPENDANCES CRITIQUES
+## 🔗 DÉPENDANCES ET ORDRE DE CHARGEMENT
 
-### **Chaîne de chargement (ordre important!)**
-```
-1. Supabase SDK (CDN)
-2. js/supabase-sync.js ✅ (définit initSupabaseSync + conversion positions)
-3. js/supabase-config.js (configuration)
-4. js/data-manager.js (CRUD)
-5. js/team-manager.js (métier)
-6. js/notification.js (notifs)
-7. js/teams.js ✅ (UI page teams)
+### Ordre critique (respecter absolument):
+```html
+<!-- 1. SDK Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- 2. Configuration -->
+<script src="js/supabase-config.js"></script>
+
+<!-- 3. Backend modules (ordre important) -->
+<script src="js/data-manager.js"></script>
+<script src="js/team-manager.js"></script> ← CORRIGÉ UUID
+<script src="js/supabase-sync.js"></script>
+<script src="js/sync-manager.js"></script>
+<script src="js/notification.js"></script>
+
+<!-- 4. Frontend spécifique à la page -->
+<script src="js/teams.js"></script>
 ```
 
-### **Dépendances pour teams.html**
-- ✅ js/teams.js (Logique UI - TeamsPageManager)
-- ✅ js/team-manager.js (CRUD équipe/joueuses)
-- ✅ js/notification.js (affichage messages)
-- ✅ js/supabase-sync.js (sync Supabase avec conversion)
-- ✅ Supabase (sync auto)
+**⚠️ IMPORTANT:** Si l'ordre n'est pas respecté, les dépendances ne seront pas disponibles et l'application ne fonctionnera pas.
 
 ---
 
-## 🆕 CORRECTIONS 24 OCT 2025
+## ✅ CHECKLIST DE VALIDATION UUID
 
-### 1️⃣ Architecture Frontend/Backend
-**Problème :** JavaScript intégré dans teams.html  
-**Solution :** 
-- Création de `js/teams.js` avec classe TeamsPageManager
-- teams.html maintenant 100% HTML pur
-- Séparation complète Frontend/Backend
+### Tests à effectuer après correction:
 
-### 2️⃣ Chemins relatifs
-**Problème :** Erreurs 404 sur tous les fichiers  
-**Solution :** 
-- Correction des chemins : `../js/fichier.js` (au lieu de `fichier.js`)
-- Correction du CSS : `../css/style.css`
-- Navigation : `../index.html`
+- [ ] **Test 1: Vider localStorage**
+  ```javascript
+  localStorage.clear();
+  location.reload();
+  ```
 
-### 3️⃣ Encodage UTF-8
-**Problème :** Emojis malformés (ðŸ'¥ au lieu de 👥)  
-**Solution :** Recréation du fichier avec encodage UTF-8 correct
+- [ ] **Test 2: Créer nouvelle équipe**
+  - Nom: "Test UUID"
+  - Vérifier console (F12): Équipe créée avec UUID valide
 
-### 4️⃣ Erreur Supabase VARCHAR(2)
-**Problème :** 
-```
-❌ Erreur 400: value too long for type character varying(2)
-```
-Positions envoyées en français complet :
-- "gardienne" (9 caractères)
-- "défenseuse" (10 caractères)
-- "milieu" (6 caractères)
-- "attaquante" (10 caractères)
+- [ ] **Test 3: Ajouter joueuse**
+  - Nom: "Test Player"
+  - Position: Attaquante
+  - Numéro: (laisser vide ou mettre 10)
+  - ✅ Vérifier: Aucune erreur 400
 
-**Solution :** Modification de `js/supabase-sync.js`
-- Ajout fonction `convertPositionToCode()` : Français → Code
-- Ajout fonction `convertCodeToPosition()` : Code → Français
-- Conversion automatique dans `addPlayerRemote()`
-- Conversion automatique dans `updatePlayerRemote()`
-- Conversion automatique dans `downloadTeams()`
+- [ ] **Test 4: Vérifier format UUID console**
+  ```javascript
+  window.teamManager.getAllTeams()[0].id
+  // Doit retourner: "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
+  ```
 
-**Mapping des positions :**
-| Français | Code Supabase |
-|----------|---------------|
-| gardienne | GK |
-| défenseuse | DF |
-| milieu | MF |
-| attaquante | FW |
+- [ ] **Test 5: Sync Supabase**
+  - Attendre 30 secondes
+  - Vérifier console: "✅ Sync complète: X uploads"
+  - ✅ Aucune erreur "invalid input syntax"
+
+- [ ] **Test 6: Vérifier dans Supabase Dashboard**
+  - Aller dans Table Editor → `teams`
+  - Vérifier format UUID de la colonne `id`
+  - Aller dans Table Editor → `players`
+  - Vérifier format UUID des colonnes `id` et `team_id`
 
 ---
 
-## ✅ FONCTIONNALITÉS TEAMS PAGE
+## 🗄️ SCHÉMA BASE DE DONNÉES SUPABASE
 
-### ✨ Fonctionnalités Actives
-✅ Créer équipe (multi-catégorie)  
-✅ Ajouter/modifier/supprimer joueuses  
-✅ Sélection de position (4 types)  
-✅ Numéro de maillot (1-99)  
-✅ Couleur d'équipe personnalisée  
-✅ Sync locale localStorage  
-✅ Sync Supabase (auto en arrière-plan avec conversion)  
-✅ Gestion erreurs et notifications  
-✅ Interface mobile optimisée  
-✅ Emojis corrects : 👥 🏠 📋 ⚽ 📺 📊  
+### Tables requises:
 
-### 🎯 Conversion Automatique
-- **Interface → Supabase :** Positions en français converties en codes (GK, DF, MF, FW)
-- **Supabase → Interface :** Codes convertis en français pour l'affichage
-- **Transparent pour l'utilisateur :** Toujours en français dans l'UI
-
----
-
-## 📝 STRUCTURE SUPABASE
-
-### Table `teams`
+**1. teams**
 ```sql
 CREATE TABLE teams (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(100) NOT NULL,
-    category VARCHAR(50),
-    color VARCHAR(7),
-    logo_url VARCHAR(255),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),  ← UUID obligatoire
+    name TEXT NOT NULL,
+    category TEXT,
+    color TEXT DEFAULT '#3498db',
+    logo_url TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
-### Table `players`
+**2. players**
 ```sql
 CREATE TABLE players (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
-    name VARCHAR(100) NOT NULL,
-    position VARCHAR(2) NOT NULL,    -- GK, DF, MF, FW
-    number VARCHAR(2),                -- Numéro maillot (1-99)
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),  ← UUID obligatoire
+    team_id UUID REFERENCES teams(id) ON DELETE CASCADE,  ← UUID obligatoire
+    name TEXT NOT NULL,
+    position TEXT NOT NULL,
+    number INTEGER NOT NULL DEFAULT 0,  ← NOT NULL (corrigé v1.1.0)
+    created_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
-**Note :** Le champ `position` est VARCHAR(2) pour stocker les codes courts (GK, DF, MF, FW).
-
----
-
-## 🔄 INSTRUCTIONS PROCHAINS DÉVELOPPEMENTS
-
-### Avant chaque modification :
-
-1. **Consulter ce SYNC_STATUS.md** ← Toujours en priorité !
-2. **Identifier les dépendances** du fichier à modifier
-3. **Vérifier la compatibilité** avec les fichiers existants
-4. **Modifier le fichier**
-5. **Mettre à jour ce SYNC_STATUS.md** avec :
-   - Nouvelle date
-   - État du fichier
-   - Changements apportés
-   - Fichiers affectés
-
----
-
-## 📞 CONTACT CLAUDE
-
-**À chaque nouvelle conversation, envoie-moi:**
-```
-🔹 Ce fichier SYNC_STATUS.md (pour le contexte)
-🔹 Ta demande/problème
-🔹 Les fichiers affectés si modification
-```
-
-**Important :** Ce fichier est la source de vérité. Claude doit TOUJOURS le consulter en priorité.
-
----
-
-## 🎯 RÉSUMÉ CORRECTIONS 24 OCT 2025
-
-**Fichiers modifiés/créés :**
-- ✅ `pages/teams.html` - HTML pur, chemins corrects, emojis OK
-- ✅ `js/teams.js` - NOUVEAU fichier avec TeamsPageManager
-- ✅ `js/supabase-sync.js` - Ajout conversion positions FR↔Code
-
-**Problèmes résolus :**
-- ✅ Architecture Frontend/Backend respectée (0% JS dans HTML)
-- ✅ Chemins relatifs corrects (../js/, ../css/)
-- ✅ Emojis UTF-8 corrects (👥 🏠 📋 ⚽)
-- ✅ Ordre de chargement scripts (SDK → Backend → Frontend)
-- ✅ Erreur Supabase 400 VARCHAR(2) (conversion automatique)
-- ✅ Erreur initSupabaseSync (ordre scripts)
-
-**Résultat :**
-- 🎨 Interface mobile fluide et compact
-- 🎯 Fonctionnalités complètes équipes + joueuses
-- 🔄 Sync Supabase fonctionnelle avec conversion
-- 📱 Architecture propre et maintenable
-- 🚀 Production ready
-
----
-
-## 📊 TESTS DE VALIDATION
-
-### Console attendue (F12)
-```
-✅ Module SupabaseSync chargé
-✅ Client Supabase initialisé
-✅ Supabase configuré et prêt
-📦 Module SupabaseManager chargé
-📦 DataManager initialisé
-📦 TeamManager initialisé
-✅ NotificationManager initialisé
-📦 Module TeamsPageManager chargé
-🎮 TeamsPageManager initialisé
-✅ Auto-sync activée (x2)
-✅ TeamsPage prêt
-```
-
-### Test ajout joueuse
-```
-✅ Joueuse ajoutée: [Nom] à [Équipe]
-✅ Sync complète: 1 uploads, 0 téléchargements
-```
-
-**Aucune erreur 400 !** ✅
-
-### Table Supabase
+**3. Real-time activation**
 ```sql
-SELECT name, position FROM players;
--- Résultat attendu : position avec codes (GK, DF, MF, FW)
+ALTER PUBLICATION supabase_realtime ADD TABLE teams;
+ALTER PUBLICATION supabase_realtime ADD TABLE players;
 ```
 
-### Interface utilisateur
-- Affichage : 🥅 gardienne, 🛡️ défenseuse, 🎯 milieu, ⚔️ attaquante
-- Emojis : 👥 🏠 📋 ⚽ 📺 📊
+---
+
+## 📞 INSTRUCTIONS POUR CLAUDE
+
+### À chaque nouvelle conversation:
+
+1. ✅ **TOUJOURS lire ce sync_status.md EN PREMIER**
+2. ✅ Identifier les logs d'erreur fournis
+3. ✅ Vérifier compatibilité UUID dans tous les fichiers
+4. ✅ Tester génération UUID:
+   ```javascript
+   crypto.randomUUID() // Navigateurs modernes
+   ```
+5. ✅ Mettre à jour ce fichier après chaque correction
+
+### Checklist développement:
+- [ ] Lire sync_status.md
+- [ ] Vérifier format UUID dans tous les ID
+- [ ] Tester localement
+- [ ] Vérifier sync Supabase
+- [ ] Documenter changements
+- [ ] Mettre à jour sync_status.md
 
 ---
 
 ## 🚀 PROCHAINES ÉTAPES
 
-### Étape 2️⃣ (Optionnel) : Stats Joueuse + Historique Matchs
-- [ ] Créer pages/player-stats.html
-- [ ] Créer js/player-stats.js
-- [ ] Ajouter fonction getPlayerStats() dans data-manager.js
-- [ ] Afficher stats historiques depuis Supabase
-- [ ] Lien "Voir stats" dans teams.html
+### Validation immédiate (URGENT):
+1. ✅ Tester création équipe avec nouveau UUID
+2. ✅ Tester ajout joueuse avec nouveau UUID
+3. ✅ Vérifier sync Supabase sans erreur
+4. ✅ Valider format UUID dans console
+5. ✅ Confirmer insertion dans tables Supabase
 
-### Étape 3️⃣ (Future) : Graphique Positionnement Tactique
-- [ ] Créer js/field-builder.js
-- [ ] Créer pages/composition-visual.html
-- [ ] Canvas pour terrain 4-2-3-1
-- [ ] Export image de composition
+### Après validation:
+- [ ] Déployer version 1.2.0
+- [ ] Créer documentation migration
+- [ ] Informer utilisateurs du changement
+- [ ] Ajouter tests automatisés UUID
 
----
-
-## 📈 MÉTRIQUES DU PROJET
-
-**Conformité architecture :** ✅ 100%  
-**Tests fonctionnels :** ✅ Passés  
-**Erreurs JavaScript :** ✅ 0  
-**Erreurs Supabase :** ✅ 0  
-**Compatibilité mobile :** ✅ Optimisé  
-**Documentation :** ✅ Complète  
+### Fonctionnalités futures (v1.3+):
+- [ ] Statistiques avancées joueuses
+- [ ] Graphiques performances
+- [ ] Visualisation tactique terrain
+- [ ] Export PDF amélioré
 
 ---
 
-**Dernière mise à jour:** 24 Oct 2025 - 15h30  
-**Prochaine révision:** Après nouvelle fonctionnalité ou modification  
-**Status:** ✅ Production Ready  
-**Responsable:** Équipe Développement ⚽
+## 📝 HISTORIQUE COMPLET DES MODIFICATIONS
+
+### Version 1.2.0 (24 Oct 2025 - 16h00) 🔧 EN COURS
+**Changements:**
+- ✅ Ajout fonction `generateUUID()` dans team-manager.js
+- ✅ Remplacement génération ID équipes (ligne 65)
+- ✅ Remplacement génération ID joueuses (ligne 155)
+- 🔧 Tests de validation en cours
+
+**Fichiers modifiés:**
+- team-manager.js (3 modifications)
+
+**Breaking changes:**
+- ⚠️ IDs existants au format `team_XXX` incompatibles
+- ⚠️ Migration requise ou reset localStorage
+
+---
+
+### Version 1.1.0 (24 Oct 2025 - 15h30) ✅ VALIDÉ
+**Changements:**
+- ✅ Correction champ `number` joueuses (défaut 0)
+- ✅ Modification formulaire teams.html
+- ✅ Tests validation complets
+
+**Fichiers modifiés:**
+- team-manager.js ligne 144 (ancien 161)
+- teams.html lignes 79-80
+
+**Bug corrigé:**
+- "null value in column number violates constraint"
+
+---
+
+### Version 1.0.0 (23 Oct 2025) ✅ INITIAL
+**Version initiale:**
+- Architecture Frontend/Backend
+- Gestion équipes et joueuses
+- Sync Supabase temps réel
+- Design mobile optimisé
+
+---
+
+## 🎯 RÉSUMÉ ÉTAT ACTUEL
+
+**Version:** 1.2.0 (en test)  
+**Bugs critiques:**
+- ✅ Champ `number` joueuses → RÉSOLU v1.1.0
+- 🔧 Format UUID invalide → EN COURS v1.2.0
+
+**Compatibilité:**
+- ✅ LocalStorage OK
+- 🔧 Supabase → Tests requis
+- ✅ Interface mobile OK
+- ✅ Sync temps réel OK
+
+**Action requise:**
+1. Tester création équipe avec UUID
+2. Valider sync Supabase
+3. Confirmer résolution erreur 400
+4. Si OK → Déployer v1.2.0
+5. Si KO → Analyser logs et corriger
+
+---
+
+**Dernière mise à jour:** 24 Octobre 2025 - 16h00  
+**Prochain check:** Après tests validation UUID  
+**Responsable:** Équipe Développement ⚽  
+**Status:** 🔧 CORRECTION EN COURS - Tests requis
