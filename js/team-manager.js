@@ -1,17 +1,6 @@
 // ===== TEAM MANAGER MODULE =====
 // Gestion complete des equipes et joueuses avec sync local/Supabase
 
-/**
- * Structure des donnees locales :
- * teams: {
- *   [teamId]: {
- *     id, name, category, color, logo_url,
- *     players: [{ id, name, position, number }],
- *     lastSync: timestamp
- *   }
- * }
- */
-
 class TeamManager {
     constructor() {
         this.localData = this.loadLocalTeams();
@@ -26,12 +15,10 @@ class TeamManager {
      * Generer un UUID v4 valide (compatible Supabase)
      */
     generateUUID() {
-        // Utiliser crypto.randomUUID() si disponible (navigateurs modernes)
         if (typeof crypto !== 'undefined' && crypto.randomUUID) {
             return crypto.randomUUID();
         }
         
-        // Fallback: generer UUID v4 manuellement
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
             const r = Math.random() * 16 | 0;
             const v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -41,17 +28,11 @@ class TeamManager {
 
     // ===== GESTION LOCALE =====
 
-    /**
-     * Charger les equipes depuis localStorage
-     */
     loadLocalTeams() {
         const data = localStorage.getItem('footballStats_teams');
         return data ? JSON.parse(data) : {};
     }
 
-    /**
-     * Sauvegarder les equipes en localStorage
-     */
     saveLocalTeams() {
         localStorage.setItem('footballStats_teams', JSON.stringify(this.localData));
         localStorage.setItem('teamManager_lastSync', new Date().toISOString());
@@ -84,25 +65,16 @@ class TeamManager {
         return team;
     }
 
-    /**
-     * Recuperer une equipe
-     */
     getTeam(teamId) {
         return this.localData[teamId] || null;
     }
 
-    /**
-     * Lister toutes les equipes
-     */
     getAllTeams() {
         return Object.values(this.localData).sort((a, b) => 
             new Date(b.created_at) - new Date(a.created_at)
         );
     }
 
-    /**
-     * Supprimer une equipe
-     */
     deleteTeam(teamId) {
         if (!this.localData[teamId]) {
             console.warn('[WARNING] Equipe non trouvee:', teamId);
@@ -117,9 +89,6 @@ class TeamManager {
         return true;
     }
 
-    /**
-     * Modifier une equipe
-     */
     updateTeam(teamId, updates) {
         const team = this.localData[teamId];
         if (!team) {
@@ -140,9 +109,6 @@ class TeamManager {
 
     // ===== GESTION JOUEUSES =====
 
-    /**
-     * Ajouter une joueuse a une equipe
-     */
     addPlayerToTeam(teamId, name, position, number = 0) {
         const team = this.getTeam(teamId);
         if (!team) {
@@ -170,26 +136,17 @@ class TeamManager {
         return player;
     }
 
-    /**
-     * Recuperer une joueuse
-     */
     getPlayer(teamId, playerId) {
         const team = this.getTeam(teamId);
         if (!team) return null;
         return team.players.find(p => p.id === playerId) || null;
     }
 
-    /**
-     * Lister les joueuses d'une equipe
-     */
     getTeamPlayers(teamId) {
         const team = this.getTeam(teamId);
         return team ? team.players : [];
     }
 
-    /**
-     * Supprimer une joueuse
-     */
     deletePlayer(teamId, playerId) {
         const team = this.getTeam(teamId);
         if (!team) {
@@ -206,15 +163,12 @@ class TeamManager {
         team.players.splice(index, 1);
         team.updated_at = new Date().toISOString();
         this.saveLocalTeams();
-        this.queueForSync('deletePlayer', { id: playerId, team_id: teamId });
+        this.queueForSync('removePlayer', { id: playerId, team_id: teamId });
 
         console.log('[OK] Joueuse supprimee:', playerId);
         return true;
     }
 
-    /**
-     * Modifier une joueuse
-     */
     updatePlayer(teamId, playerId, updates) {
         const team = this.getTeam(teamId);
         if (!team) {
@@ -241,15 +195,12 @@ class TeamManager {
 
     // ===== SYNCHRONISATION SUPABASE =====
 
-    /**
-     * Ajouter une action a la queue de sync
-     */
     queueForSync(action, data) {
         this.syncQueue.push({ action, data, timestamp: Date.now() });
     }
 
     /**
-     * Synchroniser avec Supabase
+     * Synchroniser avec Supabase - Version simplifiee
      */
     async syncWithSupabase() {
         if (this.syncInProgress) {
@@ -257,55 +208,57 @@ class TeamManager {
             return;
         }
 
-        if (!window.supabaseSync) {
-            console.warn('[WARNING] Module SupabaseSync non disponible');
+        if (!window.supabaseSync || !window.supabaseSync.isReady()) {
+            console.warn('[WARNING] SupabaseSync non disponible ou non pret');
             return;
         }
 
         this.syncInProgress = true;
 
         try {
-            // 1. Upload local -> Supabase
             let uploadCount = 0;
+            let downloadCount = 0;
+
+            // 1. UPLOAD: Envoyer les equipes non synchronisees
             const unsyncedTeams = Object.values(this.localData).filter(t => !t.synced);
             
             for (const team of unsyncedTeams) {
-                await window.supabaseSync.addTeamRemote(team);
-                team.synced = true;
+                // Creer l'equipe dans Supabase
+                const remoteTeam = await window.supabaseSync.createTeamRemote(team);
                 
-                for (const player of team.players.filter(p => !p.synced)) {
-                    await window.supabaseSync.addPlayerRemote(player);
-                    player.synced = true;
+                if (remoteTeam) {
+                    team.synced = true;
                     uploadCount++;
+
+                    // Envoyer les joueuses de cette equipe
+                    for (const player of team.players.filter(p => !p.synced)) {
+                        const remotePlayer = await window.supabaseSync.addPlayerRemote(player);
+                        if (remotePlayer) {
+                            player.synced = true;
+                            uploadCount++;
+                        }
+                    }
                 }
-                uploadCount++;
             }
 
-            // 2. Download Supabase -> local
-            const remoteTeams = await window.supabaseSync.getTeamsRemote();
-            let downloadCount = 0;
-
-            for (const remoteTeam of remoteTeams) {
-                if (!this.localData[remoteTeam.id]) {
-                    this.localData[remoteTeam.id] = {
-                        ...remoteTeam,
-                        players: [],
-                        synced: true
-                    };
-                    downloadCount++;
-                }
-
-                const remotePlayers = await window.supabaseSync.getPlayersRemote(remoteTeam.id);
-                const localTeam = this.localData[remoteTeam.id];
-
-                for (const remotePlayer of remotePlayers) {
-                    if (!localTeam.players.find(p => p.id === remotePlayer.id)) {
-                        localTeam.players.push({ ...remotePlayer, synced: true });
+            // 2. DOWNLOAD: Telecharger les equipes depuis Supabase
+            const remoteTeams = await window.supabaseSync.downloadTeams();
+            
+            if (remoteTeams && Array.isArray(remoteTeams)) {
+                for (const remoteTeam of remoteTeams) {
+                    // Si l'equipe n'existe pas localement, l'ajouter
+                    if (!this.localData[remoteTeam.id]) {
+                        this.localData[remoteTeam.id] = {
+                            ...remoteTeam,
+                            players: remoteTeam.players || [],
+                            synced: true
+                        };
                         downloadCount++;
                     }
                 }
             }
 
+            // Sauvegarder si des changements
             if (uploadCount > 0 || downloadCount > 0) {
                 this.saveLocalTeams();
             }
@@ -337,9 +290,6 @@ class TeamManager {
         this.syncWithSupabase();
     }
 
-    /**
-     * Desactiver la synchronisation automatique
-     */
     disableAutoSync() {
         if (this.autoSyncInterval) {
             clearInterval(this.autoSyncInterval);
@@ -369,6 +319,37 @@ class TeamManager {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Fusionner les equipes distantes avec les locales
+     */
+    mergeRemoteTeams(remoteTeams) {
+        if (!Array.isArray(remoteTeams)) return;
+
+        for (const remoteTeam of remoteTeams) {
+            if (!this.localData[remoteTeam.id]) {
+                // Nouvelle equipe depuis Supabase
+                this.localData[remoteTeam.id] = {
+                    ...remoteTeam,
+                    players: remoteTeam.players || [],
+                    synced: true
+                };
+            } else {
+                // Fusionner les joueuses
+                const localTeam = this.localData[remoteTeam.id];
+                if (remoteTeam.players) {
+                    for (const remotePlayer of remoteTeam.players) {
+                        if (!localTeam.players.find(p => p.id === remotePlayer.id)) {
+                            localTeam.players.push({...remotePlayer, synced: true});
+                        }
+                    }
+                }
+            }
+        }
+
+        this.saveLocalTeams();
+        console.log('[OK] Equipes fusionnees:', remoteTeams.length);
     }
 
     /**
