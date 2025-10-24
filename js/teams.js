@@ -1,29 +1,32 @@
-// ===== TEAMS PAGE LOGIC - teams.js =====
-// Frontend pour pages/teams.html
-// Zéro JavaScript dans le HTML, tout dans ce fichier
+// ===== TEAMS PAGE MANAGER =====
+// Logique UI pour la page de gestion des équipes
 
 class TeamsPageManager {
     constructor() {
         this.selectedTeamId = null;
-        this.selectedPlayers = new Set();
-        
-        console.log('🎮 TeamsPageManager initialisé');
+        this.init();
     }
 
-    // ===== INITIALISATION =====
     init() {
+        console.log('🎮 TeamsPageManager initialisé');
+        
+        // Attendre que le DOM soit chargé
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.onDOMReady());
+        } else {
+            this.onDOMReady();
+        }
+    }
+
+    onDOMReady() {
         this.setupEventListeners();
         this.updateTeamsList();
-        
-        // Auto-sync avec Supabase
-        if (window.teamManager) {
-            window.teamManager.enableAutoSync(15000);
-        }
-        
+        this.enableAutoSync();
         console.log('✅ TeamsPage prêt');
     }
 
-    // ===== SETUP ÉVÉNEMENTS =====
+    // ===== ÉVÉNEMENTS =====
+
     setupEventListeners() {
         // Créer équipe
         const createForm = document.getElementById('createTeamForm');
@@ -45,15 +48,27 @@ class TeamsPageManager {
 
         // Actions équipe
         const editBtn = document.getElementById('editTeamBtn');
-        const deleteBtn = document.getElementById('deleteTeamBtn');
-        const closeBtn = document.getElementById('closeTeamBtn');
-
         if (editBtn) editBtn.addEventListener('click', () => this.editTeam());
+
+        const deleteBtn = document.getElementById('deleteTeamBtn');
         if (deleteBtn) deleteBtn.addEventListener('click', () => this.deleteTeam());
+
+        const closeBtn = document.getElementById('closeTeamBtn');
         if (closeBtn) closeBtn.addEventListener('click', () => this.closeTeamSelection());
+
+        // Synchronisation en ligne/hors ligne
+        window.addEventListener('online', () => this.onOnline());
+    }
+
+    enableAutoSync() {
+        if (window.teamManager) {
+            window.teamManager.enableAutoSync(15000);
+            console.log('✅ Auto-sync activée');
+        }
     }
 
     // ===== GESTION ÉQUIPES =====
+
     createNewTeam() {
         const name = document.getElementById('teamName').value.trim();
         const category = document.getElementById('teamCategory').value.trim();
@@ -77,6 +92,8 @@ class TeamsPageManager {
 
     updateTeamsList() {
         const container = document.getElementById('teamsList');
+        if (!container) return;
+
         const teams = window.teamManager.getAllTeams();
 
         if (teams.length === 0) {
@@ -86,51 +103,76 @@ class TeamsPageManager {
 
         container.innerHTML = '';
         teams.forEach(team => {
-            const card = document.createElement('div');
-            card.className = 'team-card-item';
-            card.style.borderColor = team.color;
-            
-            card.innerHTML = `
-                <div class="team-icon" style="background: ${team.color};">
-                    👥
-                </div>
-                <div class="team-info">
-                    <h3>${team.name}</h3>
-                    <p>${team.category || 'Sans catégorie'}</p>
-                    <p style="font-size: 0.85em; margin-top: 4px;">👥 ${team.players?.length || 0} joueuses</p>
-                </div>
-            `;
-            
-            card.onclick = () => this.selectTeam(team.id);
+            const card = this.createTeamCard(team);
             container.appendChild(card);
         });
     }
 
+    createTeamCard(team) {
+        const card = document.createElement('div');
+        card.className = 'team-card-item';
+        card.style.cssText = `
+            padding: 1.5rem;
+            border: 2px solid ${team.color};
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        `;
+        
+        card.onmouseover = () => card.style.boxShadow = `0 4px 12px rgba(0,0,0,0.15)`;
+        card.onmouseout = () => card.style.boxShadow = 'none';
+        
+        card.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                <div style="width: 40px; height: 40px; background: ${team.color}; border-radius: 50%;"></div>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem;">${team.name}</h3>
+                    <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">${team.category || 'Sans catégorie'}</p>
+                </div>
+            </div>
+            <p style="margin: 0.5rem 0 0 0; color: #95a5a6; font-size: 0.85rem;">👥 ${team.players?.length || 0} joueuses</p>
+        `;
+        
+        card.onclick = () => this.selectTeam(team.id);
+        return card;
+    }
+
     selectTeam(teamId) {
         this.selectedTeamId = teamId;
-        this.selectedPlayers.clear();
-        
         const team = window.teamManager.getTeam(teamId);
+        
         if (!team) return;
 
-        document.getElementById('selectedTeamName').textContent = team.name;
+        const teamNameEl = document.getElementById('selectedTeamName');
+        if (teamNameEl) teamNameEl.textContent = team.name;
+
         this.updatePlayersList(teamId);
-        document.getElementById('selectedTeamSection').style.display = 'block';
-        document.getElementById('selectedTeamSection').scrollIntoView({ behavior: 'smooth' });
+
+        const section = document.getElementById('selectedTeamSection');
+        if (section) {
+            section.style.display = 'block';
+            section.scrollIntoView({ behavior: 'smooth' });
+        }
     }
 
     closeTeamSelection() {
         this.selectedTeamId = null;
-        this.selectedPlayers.clear();
-        document.getElementById('selectedTeamSection').style.display = 'none';
-        document.getElementById('addPlayerForm').reset();
+        
+        const section = document.getElementById('selectedTeamSection');
+        if (section) section.style.display = 'none';
+
+        const form = document.getElementById('addPlayerForm');
+        if (form) form.reset();
     }
 
     editTeam() {
         const team = window.teamManager.getTeam(this.selectedTeamId);
+        if (!team) return;
+
         const newName = prompt('Nouveau nom d\'équipe :', team.name);
-        if (newName) {
-            window.teamManager.updateTeam(this.selectedTeamId, { name: newName });
+        if (newName && newName.trim()) {
+            window.teamManager.updateTeam(this.selectedTeamId, { name: newName.trim() });
             this.showNotification('✅ Équipe mise à jour', 'success');
             this.updateTeamsList();
             this.selectTeam(this.selectedTeamId);
@@ -139,6 +181,8 @@ class TeamsPageManager {
 
     deleteTeam() {
         const team = window.teamManager.getTeam(this.selectedTeamId);
+        if (!team) return;
+
         if (confirm(`⚠️ Êtes-vous sûr de vouloir supprimer l'équipe "${team.name}" et toutes ses joueuses ?`)) {
             window.teamManager.deleteTeam(this.selectedTeamId);
             this.showNotification('✅ Équipe supprimée', 'success');
@@ -148,6 +192,7 @@ class TeamsPageManager {
     }
 
     // ===== GESTION JOUEUSES =====
+
     addNewPlayer() {
         const name = document.getElementById('playerName').value.trim();
         const position = document.getElementById('playerPosition').value;
@@ -163,99 +208,78 @@ class TeamsPageManager {
             this.showNotification(`✅ Joueuse "${name}" ajoutée !`, 'success');
             document.getElementById('addPlayerForm').reset();
             this.updatePlayersList(this.selectedTeamId);
+            this.updateTeamsList(); // Mettre à jour le compteur
         }
     }
 
     updatePlayersList(teamId) {
         const container = document.getElementById('playersList');
+        if (!container) return;
+
         const players = window.teamManager.getTeamPlayers(teamId);
 
-        // Mettre à jour le compteur
-        const playerCount = document.getElementById('playerCount');
-        if (playerCount) {
-            playerCount.textContent = players.length;
-        }
-
         if (players.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: #bdc3c7; grid-column: 1/-1;">Aucune joueuse ajoutée.</p>';
+            container.innerHTML = '<p style="text-align: center; color: #bdc3c7; padding: 2rem; grid-column: 1/-1;">Aucune joueuse ajoutée.</p>';
             return;
         }
 
         container.innerHTML = '';
         players.forEach(player => {
-            const card = document.createElement('div');
-            
-            // Déterminer la classe de position pour la couleur
-            let positionClass = 'state-normal';
-            let positionIcon = '⚽';
-            
-            if (player.position === 'gardienne') {
-                positionClass = 'goalkeeper';
-                positionIcon = '🥅';
-            } else if (player.position === 'defenseur') {
-                positionClass = 'defender';
-                positionIcon = '🛡️';
-            } else if (player.position === 'milieu') {
-                positionClass = 'midfielder';
-                positionIcon = '🎯';
-            } else if (player.position === 'attaquant') {
-                positionClass = 'attacker';
-                positionIcon = '⚔️';
-            }
-
-            const isSelected = this.selectedPlayers.has(player.id);
-            if (isSelected) {
-                positionClass += ' state-selected';
-            }
-
-            card.className = `player-card ${positionClass}`;
-            
-            card.innerHTML = `
-                <div class="player-position-icon">${positionIcon}</div>
-                <div class="player-name">${player.name}</div>
-                <div class="player-position">${player.position}</div>
-                ${player.number ? `<div class="player-number">${player.number}</div>` : ''}
-                <button class="player-btn-delete" data-player-id="${player.id}" data-team-id="${teamId}">🗑️</button>
-            `;
-
-            // Click pour sélectionner/désélectionner
-            card.onclick = (e) => {
-                if (!e.target.closest('.player-btn-delete')) {
-                    this.togglePlayerSelection(player.id, card);
-                }
-            };
-
-            // Click bouton supprimer
-            const deleteBtn = card.querySelector('.player-btn-delete');
-            deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.removePlayer(teamId, player.id);
-            });
-
+            const card = this.createPlayerCard(player, teamId);
             container.appendChild(card);
         });
     }
 
-    togglePlayerSelection(playerId, cardElement) {
-        if (this.selectedPlayers.has(playerId)) {
-            this.selectedPlayers.delete(playerId);
-            cardElement.classList.remove('state-selected');
-        } else {
-            this.selectedPlayers.add(playerId);
-            cardElement.classList.add('state-selected');
+    createPlayerCard(player, teamId) {
+        const card = document.createElement('div');
+        card.className = 'player-card';
+        card.style.cssText = `
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        
+        const positions = { 
+            gardienne: '🥅', 
+            défenseuse: '🛡️', 
+            milieu: '🎯', 
+            attaquante: '⚔️' 
+        };
+        
+        card.innerHTML = `
+            <div>
+                <h4 style="margin: 0; font-weight: bold;">${positions[player.position] || '⚽'} ${player.name}</h4>
+                <p style="margin: 0.25rem 0 0 0; color: #7f8c8d; font-size: 0.9rem;">${player.position}${player.number ? ' - N°' + player.number : ''}</p>
+            </div>
+            <button class="btn btn-small btn-danger" data-player-id="${player.id}" data-team-id="${teamId}">🗑️</button>
+        `;
+        
+        // Event listener pour le bouton supprimer
+        const deleteBtn = card.querySelector('button');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => this.removePlayer(teamId, player.id));
         }
+        
+        return card;
     }
 
     removePlayer(teamId, playerId) {
         const player = window.teamManager.getPlayer(teamId, playerId);
+        if (!player) return;
+
         if (confirm(`Êtes-vous sûr de vouloir supprimer "${player.name}" ?`)) {
             window.teamManager.removePlayer(teamId, playerId);
             this.showNotification('✅ Joueuse supprimée', 'success');
             this.updatePlayersList(this.selectedTeamId);
+            this.updateTeamsList(); // Mettre à jour le compteur
         }
     }
 
     // ===== NOTIFICATIONS =====
+
     showNotification(message, type = 'info') {
         if (typeof window.NotificationManager !== 'undefined' && window.NotificationManager.show) {
             window.NotificationManager.show(message, type);
@@ -264,24 +288,25 @@ class TeamsPageManager {
             alert(message);
         }
     }
+
+    // ===== SYNCHRONISATION =====
+
+    onOnline() {
+        console.log('✅ Connexion internet rétablie');
+        if (window.teamManager && window.supabaseSync?.isReady()) {
+            window.teamManager.syncWithSupabase().then(() => {
+                this.updateTeamsList();
+                if (this.selectedTeamId) {
+                    this.updatePlayersList(this.selectedTeamId);
+                }
+            });
+        }
+    }
 }
 
 // ===== INITIALISATION GLOBALE =====
-let teamsPage = null;
 
-document.addEventListener('DOMContentLoaded', function() {
-    teamsPage = new TeamsPageManager();
-    teamsPage.init();
-});
-
-// ===== SYNC SUPABASE =====
-window.addEventListener('online', () => {
-    console.log('✅ Connexion internet rétablie');
-    if (window.teamManager && window.supabaseSync?.isReady()) {
-        window.teamManager.syncWithSupabase().then(() => {
-            if (teamsPage) {
-                teamsPage.updateTeamsList();
-            }
-        });
-    }
-});
+if (typeof window !== 'undefined') {
+    window.teamsPageManager = new TeamsPageManager();
+    console.log('📦 Module TeamsPageManager chargé');
+}

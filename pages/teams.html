@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>👥 Équipes - Football Stats Manager</title>
-    <link rel="stylesheet" href="../css/style.css">
+    <title>⚽ Équipes - Football Stats Manager</title>
+    <link rel="stylesheet" href="css/style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 </head>
 <body>
@@ -16,7 +16,7 @@
 
         <!-- Navigation -->
         <nav class="nav-tabs">
-            <a href="../index.html" class="nav-link">🏠 Accueil</a>
+            <a href="index.html" class="nav-link">🏠 Accueil</a>
             <a href="teams.html" class="nav-link active">👥 Équipes</a>
             <a href="composition.html" class="nav-link">📋 Compo</a>
             <a href="match.html" class="nav-link">⚽ Match</a>
@@ -41,7 +41,7 @@
                         <label for="teamColor">Couleur</label>
                         <input type="color" id="teamColor" value="#3498db">
                     </div>
-                    <button type="submit" class="btn btn-primary" style="grid-column: span 3; width: 100%;">✅ Créer l'équipe</button>
+                    <button type="submit" class="btn btn-primary" style="grid-column: span 3;">✅ Créer l'équipe</button>
                 </form>
             </section>
 
@@ -49,7 +49,7 @@
             <section class="team-card">
                 <h2>📋 Mes Équipes</h2>
                 <div id="teamsList" class="teams-grid">
-                    <p style="text-align: center; color: #bdc3c7; padding: 2rem; grid-column: 1/-1;">Aucune équipe créée. Commencez par créer une équipe ci-dessus.</p>
+                    <p style="text-align: center; color: #bdc3c7; padding: 2rem;">Aucune équipe créée. Commencez par créer une équipe ci-dessus.</p>
                 </div>
             </section>
 
@@ -58,7 +58,7 @@
                 <h2>⚙️ Gestion de l'équipe : <span id="selectedTeamName"></span></h2>
                 
                 <!-- Ajouter une joueuse -->
-                <div class="add-player-form">
+                <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px;">
                     <h3>➕ Ajouter une Joueuse</h3>
                     <form id="addPlayerForm" class="form-grid">
                         <div class="form-group">
@@ -70,42 +70,49 @@
                             <select id="playerPosition" required>
                                 <option value="">-- Sélectionner --</option>
                                 <option value="gardienne">🥅 Gardienne</option>
-                                <option value="defenseur">🛡️ Défenseur</option>
+                                <option value="défenseuse">🛡️ Défenseuse</option>
                                 <option value="milieu">🎯 Milieu</option>
-                                <option value="attaquant">⚔️ Attaquant</option>
+                                <option value="attaquante">⚔️ Attaquante</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="playerNumber">Numéro</label>
                             <input type="number" id="playerNumber" min="1" max="99" placeholder="1-99">
                         </div>
-                        <button type="submit" class="btn btn-success" style="grid-column: span 3; width: 100%;">✅ Ajouter</button>
+                        <button type="submit" class="btn btn-success" style="grid-column: span 3;">✅ Ajouter</button>
                     </form>
                 </div>
 
-                <!-- Liste des joueuses (GRILLE COMPACT) -->
+                <!-- Liste des joueuses -->
                 <div>
-                    <h3>👥 Joueuses de l'équipe (<span id="playerCount">0</span>)</h3>
-                    <div id="playersList" class="players-grid">
-                        <p style="text-align: center; color: #bdc3c7; grid-column: 1/-1;">Aucune joueuse ajoutée.</p>
+                    <h3>👥 Joueuses de l'équipe</h3>
+                    <div id="playersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
+                        <p style="text-align: center; color: #bdc3c7;">Aucune joueuse ajoutée.</p>
                     </div>
                 </div>
 
                 <!-- Actions équipe -->
-                <div class="action-buttons" style="margin-top: 20px;">
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #ecf0f1; display: flex; gap: 1rem; flex-wrap: wrap;">
                     <button class="btn btn-warning" id="editTeamBtn">✏️ Modifier</button>
                     <button class="btn btn-danger" id="deleteTeamBtn">🗑️ Supprimer</button>
-                    <button class="btn btn-secondary" id="closeTeamBtn">❌ Fermer</button>
+                    <button class="btn btn-secondary" id="closeTeamBtn">✖️ Fermer</button>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- Scripts (CHARGEMENT EN BON ORDRE) -->
+    <!-- Scripts - ORDRE CRITIQUE : NE PAS MODIFIER -->
+    <!-- 1. SDK Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="../js/supabase-config.js"></script>
-    <script src="../js/team-manager.js"></script>
-    <script src="../js/notification.js"></script>
-    <script src="../js/teams.js"></script>
+    
+    <!-- 2. Modules Backend (dans l'ordre) -->
+    <script src="supabase-sync.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="data-manager.js"></script>
+    <script src="team-manager.js"></script>
+    <script src="notification.js"></script>
+    
+    <!-- 3. Logique UI de la page -->
+    <script src="teams.js"></script>
 </body>
 </html>
