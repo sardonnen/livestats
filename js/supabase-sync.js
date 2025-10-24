@@ -1,5 +1,5 @@
 // ===== SUPABASE SYNC MODULE =====
-// Synchronisation bidirectionnelle localStorage ↔ Supabase
+// Synchronisation bidirectionnelle localStorage â†” Supabase
 
 class SupabaseSync {
     constructor(supabaseUrl, supabaseKey) {
@@ -21,14 +21,14 @@ class SupabaseSync {
                 this.client = window.supabase.createClient(this.url, this.key);
                 this.ready = true;
                 this.connectionStatus = 'connected';
-                console.log('✅ Client Supabase initialisé');
+                console.log('âœ… Client Supabase initialisÃ©');
                 return true;
             } else {
-                console.warn('⚠️ Supabase JS SDK non chargé');
+                console.warn('âš ï¸ Supabase JS SDK non chargÃ©');
                 return false;
             }
         } catch (error) {
-            console.error('❌ Erreur init Supabase:', error);
+            console.error('âŒ Erreur init Supabase:', error);
             this.ready = false;
             return false;
         }
@@ -38,7 +38,33 @@ class SupabaseSync {
         return this.ready && this.client !== null;
     }
 
-    // ===== ÉQUIPES =====
+    /**
+     * Convertir position française → code court Supabase
+     */
+    convertPositionToCode(position) {
+        const positionMap = {
+            'gardienne': 'GK',
+            'défenseuse': 'DF',
+            'milieu': 'MF',
+            'attaquante': 'FW'
+        };
+        return positionMap[position?.toLowerCase()] || position;
+    }
+
+    /**
+     * Convertir code court Supabase → position française
+     */
+    convertCodeToPosition(code) {
+        const codeMap = {
+            'GK': 'gardienne',
+            'DF': 'défenseuse',
+            'MF': 'milieu',
+            'FW': 'attaquante'
+        };
+        return codeMap[code?.toUpperCase()] || code;
+    }
+
+    // ===== Ã‰QUIPES =====
 
     async createTeamRemote(team) {
         if (!this.isReady()) return null;
@@ -53,10 +79,10 @@ class SupabaseSync {
                 }])
                 .select();
             if (error) throw error;
-            console.log('✅ Équipe créée:', team.name);
+            console.log('âœ… Ã‰quipe crÃ©Ã©e:', team.name);
             return data[0];
         } catch (error) {
-            console.error('❌ Erreur création équipe:', error);
+            console.error('âŒ Erreur crÃ©ation Ã©quipe:', error);
             return null;
         }
     }
@@ -68,10 +94,10 @@ class SupabaseSync {
                 .from('teams')
                 .select('*, players(*)');
             if (error) throw error;
-            console.log('✅ Équipes téléchargées:', data.length);
+            console.log('âœ… Ã‰quipes tÃ©lÃ©chargÃ©es:', data.length);
             return data;
         } catch (error) {
-            console.error('❌ Erreur téléchargement équipes:', error);
+            console.error('âŒ Erreur tÃ©lÃ©chargement Ã©quipes:', error);
             return [];
         }
     }
@@ -90,9 +116,13 @@ class SupabaseSync {
                 .eq('id', team.id)
                 .select();
             if (error) throw error;
+            // Convertir la position en français pour le retour
+            if (data && data[0]) {
+                data[0].position = this.convertCodeToPosition(data[0].position);
+            }
             return data[0];
         } catch (error) {
-            console.error('❌ Erreur mise à jour équipe:', error);
+            console.error('âŒ Erreur mise Ã  jour Ã©quipe:', error);
             return null;
         }
     }
@@ -105,10 +135,10 @@ class SupabaseSync {
                 .delete()
                 .eq('id', teamId);
             if (error) throw error;
-            console.log('✅ Équipe supprimée');
+            console.log('âœ… Ã‰quipe supprimÃ©e');
             return true;
         } catch (error) {
-            console.error('❌ Erreur suppression équipe:', error);
+            console.error('âŒ Erreur suppression Ã©quipe:', error);
             return false;
         }
     }
@@ -123,14 +153,18 @@ class SupabaseSync {
                 .insert([{
                     team_id: player.team_id,
                     name: player.name,
-                    position: player.position,
-                    number: player.number
+                    position: this.convertPositionToCode(player.position),
+                    number: player.number ? String(player.number) : null
                 }])
                 .select();
             if (error) throw error;
+            // Convertir la position en français pour le retour
+            if (data && data[0]) {
+                data[0].position = this.convertCodeToPosition(data[0].position);
+            }
             return data[0];
         } catch (error) {
-            console.error('❌ Erreur ajout joueuse:', error);
+            console.error('âŒ Erreur ajout joueuse:', error);
             return null;
         }
     }
@@ -142,16 +176,20 @@ class SupabaseSync {
                 .from('players')
                 .update({
                     name: player.name,
-                    position: player.position,
-                    number: player.number,
+                    position: this.convertPositionToCode(player.position),
+                    number: player.number ? String(player.number) : null,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', player.id)
                 .select();
             if (error) throw error;
+            // Convertir la position en français pour le retour
+            if (data && data[0]) {
+                data[0].position = this.convertCodeToPosition(data[0].position);
+            }
             return data[0];
         } catch (error) {
-            console.error('❌ Erreur mise à jour joueuse:', error);
+            console.error('âŒ Erreur mise Ã  jour joueuse:', error);
             return null;
         }
     }
@@ -166,7 +204,7 @@ class SupabaseSync {
             if (error) throw error;
             return true;
         } catch (error) {
-            console.error('❌ Erreur suppression joueuse:', error);
+            console.error('âŒ Erreur suppression joueuse:', error);
             return false;
         }
     }
@@ -187,10 +225,10 @@ class SupabaseSync {
                 }])
                 .select();
             if (error) throw error;
-            console.log('✅ Match créé:', match.opponent_name);
+            console.log('âœ… Match crÃ©Ã©:', match.opponent_name);
             return data[0];
         } catch (error) {
-            console.error('❌ Erreur création match:', error);
+            console.error('âŒ Erreur crÃ©ation match:', error);
             return null;
         }
     }
@@ -211,14 +249,18 @@ class SupabaseSync {
                 .eq('id', match.id)
                 .select();
             if (error) throw error;
+            // Convertir la position en français pour le retour
+            if (data && data[0]) {
+                data[0].position = this.convertCodeToPosition(data[0].position);
+            }
             return data[0];
         } catch (error) {
-            console.error('❌ Erreur mise à jour match:', error);
+            console.error('âŒ Erreur mise Ã  jour match:', error);
             return null;
         }
     }
 
-    // ===== ÉVÉNEMENTS =====
+    // ===== Ã‰VÃ‰NEMENTS =====
 
     async recordEventRemote(event) {
         if (!this.isReady()) return null;
@@ -237,9 +279,13 @@ class SupabaseSync {
                 }])
                 .select();
             if (error) throw error;
+            // Convertir la position en français pour le retour
+            if (data && data[0]) {
+                data[0].position = this.convertCodeToPosition(data[0].position);
+            }
             return data[0];
         } catch (error) {
-            console.error('❌ Erreur enregistrement événement:', error);
+            console.error('âŒ Erreur enregistrement Ã©vÃ©nement:', error);
             return null;
         }
     }
@@ -254,10 +300,10 @@ class SupabaseSync {
                 .insert(composition)
                 .select();
             if (error) throw error;
-            console.log('✅ Composition sauvegardée');
+            console.log('âœ… Composition sauvegardÃ©e');
             return data;
         } catch (error) {
-            console.error('❌ Erreur sauvegarde composition:', error);
+            console.error('âŒ Erreur sauvegarde composition:', error);
             return null;
         }
     }
@@ -286,14 +332,18 @@ class SupabaseSync {
                 }])
                 .select();
             if (error) throw error;
+            // Convertir la position en français pour le retour
+            if (data && data[0]) {
+                data[0].position = this.convertCodeToPosition(data[0].position);
+            }
             return data[0];
         } catch (error) {
-            console.error('❌ Erreur mise à jour stats:', error);
+            console.error('âŒ Erreur mise Ã  jour stats:', error);
             return null;
         }
     }
 
-    // ===== SYNC GÉNÉRALE =====
+    // ===== SYNC GÃ‰NÃ‰RALE =====
 
     async executeSync(operation) {
         const { operation: op, data } = operation;
@@ -326,11 +376,11 @@ class SupabaseSync {
 if (typeof window !== 'undefined') {
     window.supabaseSync = null;
     
-    // À initialiser après avoir défini SUPABASE_URL et SUPABASE_KEY
+    // Ã€ initialiser aprÃ¨s avoir dÃ©fini SUPABASE_URL et SUPABASE_KEY
     window.initSupabaseSync = function(url, key) {
         window.supabaseSync = new SupabaseSync(url, key);
         return window.supabaseSync;
     };
     
-    console.log('📦 Module SupabaseSync chargé');
+    console.log('📦 Module SupabaseSync chargÃ©');
 }
