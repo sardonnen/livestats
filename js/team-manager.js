@@ -141,7 +141,7 @@ class TeamManager {
             team_id: teamId,
             name: name.trim(),
             position: position.trim(),
-            number: number ? parseInt(number) : null,
+            number: number && number.toString().trim() !== '' ? parseInt(number) : 0,
             created_at: new Date().toISOString(),
             synced: false
         };
