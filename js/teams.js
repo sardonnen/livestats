@@ -1,392 +1,287 @@
-// ===== TEAMS BACKEND =====
-// Gestion des équipes et synchronisation Supabase
-// Ce fichier gère UNIQUEMENT les données, pas l'UI
+// ===== TEAMS PAGE LOGIC - teams.js =====
+// Frontend pour pages/teams.html
+// Zéro JavaScript dans le HTML, tout dans ce fichier
 
-class TeamsBackend {
+class TeamsPageManager {
     constructor() {
-        this.teams = this.loadLocalTeams();
-        this.syncInProgress = false;
-        this.syncQueue = [];
-        console.log('📦 TeamsBackend initialisé');
-    }
-
-    // ===== DONNÉES LOCALES =====
-
-    /**
-     * Charger les équipes depuis localStorage
-     */
-    loadLocalTeams() {
-        try {
-            const data = localStorage.getItem('footballStats_teams');
-            return data ? JSON.parse(data) : {};
-        } catch (error) {
-            console.error('❌ Erreur chargement local:', error);
-            return {};
-        }
-    }
-
-    /**
-     * Sauvegarder les équipes en localStorage
-     */
-    saveLocalTeams() {
-        try {
-            localStorage.setItem('footballStats_teams', JSON.stringify(this.teams));
-            localStorage.setItem('footballStats_teamsLastUpdate', new Date().toISOString());
-        } catch (error) {
-            console.error('❌ Erreur sauvegarde local:', error);
-        }
-    }
-
-    // ===== OPÉRATIONS ÉQUIPES =====
-
-    /**
-     * Créer une nouvelle équipe
-     */
-    createTeam(name, category = '', color = '#3498db') {
-        if (!name || !name.trim()) {
-            throw new Error('Nom d\'équipe requis');
-        }
-
-        const teamId = 'team_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        this.selectedTeamId = null;
+        this.selectedPlayers = new Set();
         
-        const team = {
-            id: teamId,
-            name: name.trim(),
-            category: category.trim(),
-            color: color,
-            players: [],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        };
-
-        this.teams[teamId] = team;
-        this.saveLocalTeams();
-        this.queueForSync('createTeam', team);
-
-        console.log('✅ Équipe créée localement:', name);
-        return team;
+        console.log('🎮 TeamsPageManager initialisé');
     }
 
-    /**
-     * Récupérer une équipe
-     */
-    getTeam(teamId) {
-        return this.teams[teamId] || null;
-    }
-
-    /**
-     * Lister toutes les équipes
-     */
-    getAllTeams() {
-        return Object.values(this.teams).sort((a, b) => 
-            new Date(b.created_at) - new Date(a.created_at)
-        );
-    }
-
-    /**
-     * Mettre à jour une équipe
-     */
-    updateTeam(teamId, updates) {
-        const team = this.teams[teamId];
-        if (!team) {
-            throw new Error('Équipe non trouvée');
-        }
-
-        Object.assign(team, updates);
-        team.updated_at = new Date().toISOString();
-        this.saveLocalTeams();
-        this.queueForSync('updateTeam', team);
-
-        console.log('✅ Équipe mise à jour:', team.name);
-        return team;
-    }
-
-    /**
-     * Supprimer une équipe
-     */
-    deleteTeam(teamId) {
-        const team = this.teams[teamId];
-        if (!team) {
-            throw new Error('Équipe non trouvée');
-        }
-
-        delete this.teams[teamId];
-        this.saveLocalTeams();
-        this.queueForSync('deleteTeam', { id: teamId, name: team.name });
-
-        console.log('✅ Équipe supprimée:', team.name);
-        return true;
-    }
-
-    // ===== OPÉRATIONS JOUEUSES =====
-
-    /**
-     * Ajouter une joueuse à une équipe
-     */
-    addPlayerToTeam(teamId, name, position, number = null) {
-        const team = this.teams[teamId];
-        if (!team) {
-            throw new Error('Équipe non trouvée');
-        }
-
-        if (!name || !position) {
-            throw new Error('Nom et position requis');
-        }
-
-        const playerId = 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    // ===== INITIALISATION =====
+    init() {
+        this.setupEventListeners();
+        this.updateTeamsList();
         
-        const player = {
-            id: playerId,
-            name: name.trim(),
-            position: position,
-            number: number ? parseInt(number) : null,
-            created_at: new Date().toISOString()
-        };
-
-        if (!team.players) {
-            team.players = [];
+        // Auto-sync avec Supabase
+        if (window.teamManager) {
+            window.teamManager.enableAutoSync(15000);
         }
-
-        team.players.push(player);
-        team.updated_at = new Date().toISOString();
-        this.saveLocalTeams();
-        this.queueForSync('addPlayer', { teamId, player });
-
-        console.log('✅ Joueuse ajoutée:', name);
-        return player;
+        
+        console.log('✅ TeamsPage prêt');
     }
 
-    /**
-     * Récupérer les joueuses d'une équipe
-     */
-    getTeamPlayers(teamId) {
-        const team = this.teams[teamId];
-        return team?.players || [];
+    // ===== SETUP ÉVÉNEMENTS =====
+    setupEventListeners() {
+        // Créer équipe
+        const createForm = document.getElementById('createTeamForm');
+        if (createForm) {
+            createForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.createNewTeam();
+            });
+        }
+
+        // Ajouter joueuse
+        const addPlayerForm = document.getElementById('addPlayerForm');
+        if (addPlayerForm) {
+            addPlayerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.addNewPlayer();
+            });
+        }
+
+        // Actions équipe
+        const editBtn = document.getElementById('editTeamBtn');
+        const deleteBtn = document.getElementById('deleteTeamBtn');
+        const closeBtn = document.getElementById('closeTeamBtn');
+
+        if (editBtn) editBtn.addEventListener('click', () => this.editTeam());
+        if (deleteBtn) deleteBtn.addEventListener('click', () => this.deleteTeam());
+        if (closeBtn) closeBtn.addEventListener('click', () => this.closeTeamSelection());
     }
 
-    /**
-     * Récupérer une joueuse
-     */
-    getPlayer(teamId, playerId) {
-        const team = this.teams[teamId];
-        if (!team) return null;
-        return team.players?.find(p => p.id === playerId) || null;
-    }
+    // ===== GESTION ÉQUIPES =====
+    createNewTeam() {
+        const name = document.getElementById('teamName').value.trim();
+        const category = document.getElementById('teamCategory').value.trim();
+        const color = document.getElementById('teamColor').value;
 
-    /**
-     * Supprimer une joueuse
-     */
-    removePlayer(teamId, playerId) {
-        const team = this.teams[teamId];
-        if (!team) {
-            throw new Error('Équipe non trouvée');
+        if (!name) {
+            this.showNotification('Veuillez entrer un nom d\'équipe', 'warning');
+            return;
         }
 
-        const player = team.players?.find(p => p.id === playerId);
-        if (!player) {
-            throw new Error('Joueuse non trouvée');
-        }
-
-        team.players = team.players.filter(p => p.id !== playerId);
-        team.updated_at = new Date().toISOString();
-        this.saveLocalTeams();
-        this.queueForSync('removePlayer', { teamId, playerId });
-
-        console.log('✅ Joueuse supprimée');
-        return true;
-    }
-
-    // ===== SYNCHRONISATION SUPABASE =====
-
-    /**
-     * Synchroniser avec Supabase
-     */
-    async syncWithSupabase() {
-        if (!window.supabaseManager?.isReady()) {
-            console.log('⚠️ Supabase non prêt pour la sync');
-            return false;
-        }
-
-        if (this.syncInProgress) {
-            console.log('⏳ Sync déjà en cours...');
-            return false;
-        }
-
-        this.syncInProgress = true;
-        try {
-            console.log('🔄 Synchronisation Supabase...');
-
-            // Uploader toutes les équipes
-            for (const team of this.getAllTeams()) {
-                await this.syncTeamToSupabase(team);
-            }
-
-            console.log('✅ Synchronisation terminée');
-            this.syncQueue = [];
-            return true;
-        } catch (error) {
-            console.error('❌ Erreur sync Supabase:', error);
-            return false;
-        } finally {
-            this.syncInProgress = false;
+        const team = window.teamManager.createTeam(name, category, color);
+        if (team) {
+            this.showNotification(`✅ Équipe "${name}" créée !`, 'success');
+            document.getElementById('createTeamForm').reset();
+            this.updateTeamsList();
+            this.selectTeam(team.id);
+        } else {
+            this.showNotification('Erreur lors de la création', 'error');
         }
     }
 
-    /**
-     * Synchroniser une équipe à Supabase
-     */
-    async syncTeamToSupabase(team) {
-        try {
-            const { data: existing } = await window.supabaseSync.client
-                .from('teams')
-                .select('id')
-                .eq('id', team.id)
-                .single();
+    updateTeamsList() {
+        const container = document.getElementById('teamsList');
+        const teams = window.teamManager.getAllTeams();
 
-            if (existing) {
-                // Mettre à jour
-                await window.supabaseSync.client
-                    .from('teams')
-                    .update({
-                        name: team.name,
-                        category: team.category,
-                        color: team.color,
-                        updated_at: team.updated_at
-                    })
-                    .eq('id', team.id);
-            } else {
-                // Créer
-                await window.supabaseSync.client
-                    .from('teams')
-                    .insert({
-                        id: team.id,
-                        name: team.name,
-                        category: team.category,
-                        color: team.color,
-                        created_at: team.created_at,
-                        updated_at: team.updated_at
-                    });
-            }
-
-            // Synchroniser les joueuses
-            for (const player of team.players || []) {
-                await this.syncPlayerToSupabase(team.id, player);
-            }
-
-            return true;
-        } catch (error) {
-            console.error('❌ Erreur sync équipe:', error);
-            return false;
-        }
-    }
-
-    /**
-     * Synchroniser une joueuse à Supabase
-     */
-    async syncPlayerToSupabase(teamId, player) {
-        try {
-            const { data: existing } = await window.supabaseSync.client
-                .from('players')
-                .select('id')
-                .eq('id', player.id)
-                .single()
-                .catch(() => ({ data: null }));
-
-            if (existing) {
-                // Mettre à jour
-                await window.supabaseSync.client
-                    .from('players')
-                    .update({
-                        name: player.name,
-                        position: player.position,
-                        number: player.number
-                    })
-                    .eq('id', player.id);
-            } else {
-                // Créer
-                await window.supabaseSync.client
-                    .from('players')
-                    .insert({
-                        id: player.id,
-                        team_id: teamId,
-                        name: player.name,
-                        position: player.position,
-                        number: player.number,
-                        created_at: player.created_at
-                    });
-            }
-
-            return true;
-        } catch (error) {
-            console.error('❌ Erreur sync joueuse:', error);
-            return false;
-        }
-    }
-
-    /**
-     * Charger les équipes depuis Supabase
-     */
-    async downloadFromSupabase() {
-        if (!window.supabaseManager?.isReady()) {
-            console.log('⚠️ Supabase non prêt pour téléchargement');
-            return [];
+        if (teams.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #bdc3c7; padding: 2rem; grid-column: 1/-1;">Aucune équipe créée. Commencez par créer une équipe ci-dessus.</p>';
+            return;
         }
 
-        try {
-            console.log('📥 Téléchargement depuis Supabase...');
-
-            const { data: supabaseTeams, error } = await window.supabaseSync.client
-                .from('teams')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-
-            // Fusionner avec les données locales
-            const teams = supabaseTeams || [];
-            for (const team of teams) {
-                if (!this.teams[team.id]) {
-                    this.teams[team.id] = team;
-                }
-            }
-
-            this.saveLocalTeams();
-            console.log(`✅ ${teams.length} équipe(s) téléchargée(s) depuis Supabase`);
-            return this.getAllTeams();
-        } catch (error) {
-            console.error('❌ Erreur téléchargement Supabase:', error);
-            return this.getAllTeams();
-        }
-    }
-
-    /**
-     * File d'attente pour la synchronisation
-     */
-    queueForSync(action, data) {
-        this.syncQueue.push({
-            action,
-            data,
-            timestamp: Date.now()
+        container.innerHTML = '';
+        teams.forEach(team => {
+            const card = document.createElement('div');
+            card.className = 'team-card-item';
+            card.style.borderColor = team.color;
+            
+            card.innerHTML = `
+                <div class="team-icon" style="background: ${team.color};">
+                    👥
+                </div>
+                <div class="team-info">
+                    <h3>${team.name}</h3>
+                    <p>${team.category || 'Sans catégorie'}</p>
+                    <p style="font-size: 0.85em; margin-top: 4px;">👥 ${team.players?.length || 0} joueuses</p>
+                </div>
+            `;
+            
+            card.onclick = () => this.selectTeam(team.id);
+            container.appendChild(card);
         });
     }
 
-    /**
-     * Activer la synchronisation automatique
-     */
-    enableAutoSync(interval = 15000) {
-        setInterval(async () => {
-            if (this.syncQueue.length > 0) {
-                await this.syncWithSupabase();
-            }
-        }, interval);
+    selectTeam(teamId) {
+        this.selectedTeamId = teamId;
+        this.selectedPlayers.clear();
+        
+        const team = window.teamManager.getTeam(teamId);
+        if (!team) return;
 
-        console.log('✅ Auto-sync activée (' + interval + 'ms)');
+        document.getElementById('selectedTeamName').textContent = team.name;
+        this.updatePlayersList(teamId);
+        document.getElementById('selectedTeamSection').style.display = 'block';
+        document.getElementById('selectedTeamSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    closeTeamSelection() {
+        this.selectedTeamId = null;
+        this.selectedPlayers.clear();
+        document.getElementById('selectedTeamSection').style.display = 'none';
+        document.getElementById('addPlayerForm').reset();
+    }
+
+    editTeam() {
+        const team = window.teamManager.getTeam(this.selectedTeamId);
+        const newName = prompt('Nouveau nom d\'équipe :', team.name);
+        if (newName) {
+            window.teamManager.updateTeam(this.selectedTeamId, { name: newName });
+            this.showNotification('✅ Équipe mise à jour', 'success');
+            this.updateTeamsList();
+            this.selectTeam(this.selectedTeamId);
+        }
+    }
+
+    deleteTeam() {
+        const team = window.teamManager.getTeam(this.selectedTeamId);
+        if (confirm(`⚠️ Êtes-vous sûr de vouloir supprimer l'équipe "${team.name}" et toutes ses joueuses ?`)) {
+            window.teamManager.deleteTeam(this.selectedTeamId);
+            this.showNotification('✅ Équipe supprimée', 'success');
+            this.closeTeamSelection();
+            this.updateTeamsList();
+        }
+    }
+
+    // ===== GESTION JOUEUSES =====
+    addNewPlayer() {
+        const name = document.getElementById('playerName').value.trim();
+        const position = document.getElementById('playerPosition').value;
+        const number = document.getElementById('playerNumber').value;
+
+        if (!name || !position) {
+            this.showNotification('Veuillez remplir tous les champs obligatoires', 'warning');
+            return;
+        }
+
+        const player = window.teamManager.addPlayerToTeam(this.selectedTeamId, name, position, number);
+        if (player) {
+            this.showNotification(`✅ Joueuse "${name}" ajoutée !`, 'success');
+            document.getElementById('addPlayerForm').reset();
+            this.updatePlayersList(this.selectedTeamId);
+        }
+    }
+
+    updatePlayersList(teamId) {
+        const container = document.getElementById('playersList');
+        const players = window.teamManager.getTeamPlayers(teamId);
+
+        // Mettre à jour le compteur
+        const playerCount = document.getElementById('playerCount');
+        if (playerCount) {
+            playerCount.textContent = players.length;
+        }
+
+        if (players.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #bdc3c7; grid-column: 1/-1;">Aucune joueuse ajoutée.</p>';
+            return;
+        }
+
+        container.innerHTML = '';
+        players.forEach(player => {
+            const card = document.createElement('div');
+            
+            // Déterminer la classe de position pour la couleur
+            let positionClass = 'state-normal';
+            let positionIcon = '⚽';
+            
+            if (player.position === 'gardienne') {
+                positionClass = 'goalkeeper';
+                positionIcon = '🥅';
+            } else if (player.position === 'defenseur') {
+                positionClass = 'defender';
+                positionIcon = '🛡️';
+            } else if (player.position === 'milieu') {
+                positionClass = 'midfielder';
+                positionIcon = '🎯';
+            } else if (player.position === 'attaquant') {
+                positionClass = 'attacker';
+                positionIcon = '⚔️';
+            }
+
+            const isSelected = this.selectedPlayers.has(player.id);
+            if (isSelected) {
+                positionClass += ' state-selected';
+            }
+
+            card.className = `player-card ${positionClass}`;
+            
+            card.innerHTML = `
+                <div class="player-position-icon">${positionIcon}</div>
+                <div class="player-name">${player.name}</div>
+                <div class="player-position">${player.position}</div>
+                ${player.number ? `<div class="player-number">${player.number}</div>` : ''}
+                <button class="player-btn-delete" data-player-id="${player.id}" data-team-id="${teamId}">🗑️</button>
+            `;
+
+            // Click pour sélectionner/désélectionner
+            card.onclick = (e) => {
+                if (!e.target.closest('.player-btn-delete')) {
+                    this.togglePlayerSelection(player.id, card);
+                }
+            };
+
+            // Click bouton supprimer
+            const deleteBtn = card.querySelector('.player-btn-delete');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.removePlayer(teamId, player.id);
+            });
+
+            container.appendChild(card);
+        });
+    }
+
+    togglePlayerSelection(playerId, cardElement) {
+        if (this.selectedPlayers.has(playerId)) {
+            this.selectedPlayers.delete(playerId);
+            cardElement.classList.remove('state-selected');
+        } else {
+            this.selectedPlayers.add(playerId);
+            cardElement.classList.add('state-selected');
+        }
+    }
+
+    removePlayer(teamId, playerId) {
+        const player = window.teamManager.getPlayer(teamId, playerId);
+        if (confirm(`Êtes-vous sûr de vouloir supprimer "${player.name}" ?`)) {
+            window.teamManager.removePlayer(teamId, playerId);
+            this.showNotification('✅ Joueuse supprimée', 'success');
+            this.updatePlayersList(this.selectedTeamId);
+        }
+    }
+
+    // ===== NOTIFICATIONS =====
+    showNotification(message, type = 'info') {
+        if (typeof window.NotificationManager !== 'undefined' && window.NotificationManager.show) {
+            window.NotificationManager.show(message, type);
+        } else {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+            alert(message);
+        }
     }
 }
 
 // ===== INITIALISATION GLOBALE =====
+let teamsPage = null;
 
-if (typeof window !== 'undefined') {
-    window.teamsBackend = new TeamsBackend();
-    console.log('📦 Module TeamsBackend chargé');
-}
+document.addEventListener('DOMContentLoaded', function() {
+    teamsPage = new TeamsPageManager();
+    teamsPage.init();
+});
+
+// ===== SYNC SUPABASE =====
+window.addEventListener('online', () => {
+    console.log('✅ Connexion internet rétablie');
+    if (window.teamManager && window.supabaseSync?.isReady()) {
+        window.teamManager.syncWithSupabase().then(() => {
+            if (teamsPage) {
+                teamsPage.updateTeamsList();
+            }
+        });
+    }
+});
