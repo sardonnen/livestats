@@ -1029,3 +1029,528 @@ body {
         font-size: 1.2em;
     }
 }
+
+/* ===== ÉTAPE 1: DESIGN MOBILE OPTIMISÉ + SÉLECTION JOUEUSES ===== */
+
+/* ===== OPTIMISATION MOBILE (COMPACT) ===== */
+@media (max-width: 768px) {
+    .container {
+        padding: 12px;
+    }
+
+    .team-card {
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 6px;
+    }
+
+    .team-card h2 {
+        font-size: 1.3em;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+    }
+
+    .team-card h3 {
+        font-size: 1.1em;
+        margin-bottom: 10px;
+    }
+
+    .header {
+        padding: 15px 12px;
+        margin-bottom: 15px;
+    }
+
+    .header h1 {
+        font-size: 1.8em;
+        margin-bottom: 5px;
+    }
+
+    .header p {
+        font-size: 0.95em;
+    }
+
+    /* Formulaires compacts */
+    .form-grid {
+        gap: 10px;
+        margin: 15px 0;
+    }
+
+    .form-group {
+        margin: 10px 0;
+    }
+
+    .form-group label {
+        font-size: 0.9em;
+        margin-bottom: 5px;
+    }
+
+    .form-group input,
+    .form-group select {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    /* Boutons compacts */
+    .btn {
+        padding: 10px 16px;
+        font-size: 14px;
+        min-height: 40px;
+        margin: 3px;
+    }
+
+    .btn-small {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-height: 36px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 8px;
+    }
+
+    .team-card {
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+
+    .header {
+        padding: 12px 8px;
+    }
+
+    .header h1 {
+        font-size: 1.4em;
+    }
+
+    .form-group label {
+        font-size: 0.85em;
+    }
+
+    .btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-height: 36px;
+        margin: 2px;
+        width: 100%;
+    }
+}
+
+/* ===== GRILLE DE JOUEUSES (SÉLECTION COLORÉE) ===== */
+
+.players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+    margin: 15px 0;
+}
+
+.player-card {
+    position: relative;
+    padding: 12px 10px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+}
+
+.player-card:hover {
+    border-color: #bdc3c7;
+    background: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* État NORMAL (pas sélectionné) */
+.player-card.state-normal {
+    background: white;
+    border: 2px solid #e0e0e0;
+}
+
+/* État SÉLECTIONNÉ (ajout à composition) */
+.player-card.state-selected {
+    background: #667eea;
+    border: 2px solid #667eea;
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.player-card.state-selected .player-name {
+    font-weight: 700;
+    color: white;
+}
+
+.player-card.state-selected .player-position {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* État POSITION (couleur par poste) */
+.player-card.goalkeeper {
+    background: #fff8e1;
+    border-color: #ffd54f;
+}
+
+.player-card.goalkeeper:hover {
+    background: #ffe082;
+}
+
+.player-card.defender {
+    background: #e3f2fd;
+    border-color: #64b5f6;
+}
+
+.player-card.defender:hover {
+    background: #bbdefb;
+}
+
+.player-card.midfielder {
+    background: #f3e5f5;
+    border-color: #ce93d8;
+}
+
+.player-card.midfielder:hover {
+    background: #e1bee7;
+}
+
+.player-card.attacker {
+    background: #fce4ec;
+    border-color: #f48fb1;
+}
+
+.player-card.attacker:hover {
+    background: #f8bbd0;
+}
+
+/* Badge pour le numéro */
+.player-number {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    background: #667eea;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.player-card.state-selected .player-number {
+    background: white;
+    color: #667eea;
+}
+
+/* Icône position */
+.player-position-icon {
+    font-size: 1.8em;
+}
+
+.player-name {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #2c3e50;
+    line-height: 1.2;
+    word-wrap: break-word;
+    max-width: 100%;
+}
+
+.player-position {
+    font-size: 0.75em;
+    color: #7f8c8d;
+    opacity: 0.85;
+}
+
+/* Bouton d'action dans la carte */
+.player-btn-delete {
+    opacity: 0;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    padding: 4px 6px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.75em;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.player-card:hover .player-btn-delete {
+    opacity: 1;
+}
+
+/* ===== GRILLE D'ÉQUIPES ===== */
+
+.teams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.team-card-item {
+    padding: 15px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.team-card-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    border-color: #667eea;
+}
+
+.team-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1.5em;
+}
+
+.team-info {
+    flex: 1;
+}
+
+.team-info h3 {
+    margin: 0;
+    font-size: 1.1em;
+    color: #2c3e50;
+}
+
+.team-info p {
+    margin: 4px 0 0 0;
+    color: #7f8c8d;
+    font-size: 0.9em;
+}
+
+/* ===== SECTION DE GESTION (MODAL-LIKE) ===== */
+
+#selectedTeamSection {
+    background: #f8f9fa;
+    border: 2px solid #667eea;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+#selectedTeamSection h2 {
+    color: #667eea;
+    border-bottom: 2px solid #667eea;
+}
+
+.add-player-form {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #e0e0e0;
+}
+
+.add-player-form h3 {
+    margin-top: 0;
+    font-size: 1em;
+    margin-bottom: 12px;
+}
+
+/* ===== STATISTIQUES ÉQUIPE (COMPACTES) ===== */
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin: 15px 0;
+}
+
+.stat-card {
+    padding: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 6px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stat-value {
+    font-size: 2em;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+.stat-label {
+    font-size: 0.85em;
+    opacity: 0.9;
+}
+
+/* ===== RESPONSIVE POUR PETITS ÉCRANS ===== */
+
+@media (max-width: 768px) {
+    .players-grid {
+        grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+        gap: 6px;
+    }
+
+    .player-card {
+        padding: 8px;
+        min-height: 95px;
+        font-size: 0.9em;
+    }
+
+    .player-position-icon {
+        font-size: 1.4em;
+    }
+
+    .player-name {
+        font-size: 0.8em;
+    }
+
+    .player-position {
+        font-size: 0.7em;
+    }
+
+    .player-number {
+        width: 20px;
+        height: 20px;
+        font-size: 0.7em;
+    }
+
+    .teams-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .stat-card {
+        padding: 10px;
+    }
+
+    .stat-value {
+        font-size: 1.6em;
+    }
+
+    .stat-label {
+        font-size: 0.75em;
+    }
+}
+
+@media (max-width: 480px) {
+    .players-grid {
+        grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+        gap: 4px;
+    }
+
+    .player-card {
+        padding: 6px;
+        min-height: 85px;
+        gap: 4px;
+    }
+
+    .player-position-icon {
+        font-size: 1.2em;
+    }
+
+    .player-name {
+        font-size: 0.75em;
+    }
+
+    .player-position {
+        font-size: 0.65em;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+}
+
+/* ===== ANIMATION DE SÉLECTION ===== */
+
+@keyframes selectBounce {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.player-card.state-selected {
+    animation: selectBounce 0.3s ease;
+}
+
+/* ===== ZONES INTERACTIVES ===== */
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.action-buttons .btn {
+    flex: 1;
+    min-width: 100px;
+    margin: 0;
+}
+
+/* ===== FOND BLANC + POLICE PETITE ===== */
+
+body {
+    background: white;
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    body {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 12px;
+    }
+}
+
+/* ===== AMÉLIORATION CONTRASTE ===== */
+
+.player-card {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.player-card:active {
+    transform: scale(0.98);
+}
+
+/* Focus pour accessibilité */
+.player-card:focus,
+.btn:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
