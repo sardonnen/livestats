@@ -1,70 +1,52 @@
 // ===== SUPABASE SYNC MODULE =====
-// Synchronisation bidirectionnelle localStorage Ã¢â€ â€ Supabase
+// Gestion de la synchronisation bidirectionnelle avec Supabase
 
 class SupabaseSync {
     constructor(supabaseUrl, supabaseKey) {
-        this.url = supabaseUrl;
-        this.key = supabaseKey;
-        this.ready = false;
         this.client = null;
-        this.connectionStatus = 'disconnected';
-        
-        this.initClient();
-    }
+        this.isInitialized = false;
 
-    /**
-     * Initialiser le client Supabase
-     */
-    initClient() {
+        if (typeof window.supabase === 'undefined') {
+            console.error('❌ Supabase SDK non chargé');
+            return;
+        }
+
         try {
-            if (window.supabase) {
-                this.client = window.supabase.createClient(this.url, this.key);
-                this.ready = true;
-                this.connectionStatus = 'connected';
-                console.log('Ã¢Å“â€¦ Client Supabase initialisÃƒÂ©');
-                return true;
-            } else {
-                console.warn('Ã¢Å¡Â Ã¯Â¸Â Supabase JS SDK non chargÃƒÂ©');
-                return false;
-            }
+            this.client = window.supabase.createClient(supabaseUrl, supabaseKey);
+            this.isInitialized = true;
+            console.log('✅ Client Supabase initialisé');
         } catch (error) {
-            console.error('Ã¢ÂÅ’ Erreur init Supabase:', error);
-            this.ready = false;
-            return false;
+            console.error('❌ Erreur initialisation Supabase:', error);
         }
     }
 
     isReady() {
-        return this.ready && this.client !== null;
+        return this.isInitialized && this.client !== null;
     }
 
-    /**
-     * Convertir position franÃ§aise â†’ code court Supabase
-     */
+    // ===== CONVERSION POSITIONS =====
+
     convertPositionToCode(position) {
-        const positionMap = {
-            'gardienne': 'GK',
-            'dÃ©fenseuse': 'DF',
-            'milieu': 'MF',
-            'attaquante': 'FW'
+        const mapping = {
+            'Gardien': 'GK',
+            'Défenseur': 'DF',
+            'Milieu': 'MF',
+            'Attaquant': 'FW'
         };
-        return positionMap[position?.toLowerCase()] || position;
+        return mapping[position] || position;
     }
 
-    /**
-     * Convertir code court Supabase â†’ position franÃ§aise
-     */
     convertCodeToPosition(code) {
-        const codeMap = {
-            'GK': 'gardienne',
-            'DF': 'dÃ©fenseuse',
-            'MF': 'milieu',
-            'FW': 'attaquante'
+        const mapping = {
+            'GK': 'Gardien',
+            'DF': 'Défenseur',
+            'MF': 'Milieu',
+            'FW': 'Attaquant'
         };
-        return codeMap[code?.toUpperCase()] || code;
+        return mapping[code] || code;
     }
 
-    // ===== Ãƒâ€°QUIPES =====
+    // ===== ÉQUIPES =====
 
     async createTeamRemote(team) {
         if (!this.isReady()) return null;
@@ -73,16 +55,42 @@ class SupabaseSync {
                 .from('teams')
                 .insert([{
                     name: team.name,
-                    category: team.category,
-                    color: team.color,
-                    logo_url: team.logo_url
+                    category: team.category || '',
+                    color: team.color || '#3498db',
+                    description: team.description || null,
+                    logo_url: team.logo_url || null
                 }])
                 .select();
             if (error) throw error;
-            console.log('Ã¢Å“â€¦ Ãƒâ€°quipe crÃƒÂ©ÃƒÂ©e:', team.name);
+            console.log('✅ Équipe créée:', team.name);
             return data[0];
         } catch (error) {
-            console.error('Ã¢ÂÅ’ Erreur crÃƒÂ©ation ÃƒÂ©quipe:', error);
+            console.error('❌ Erreur création équipe:', error);
+            return null;
+        }
+    }
+
+    async updateTeamRemote(team) {
+        if (!this.isReady()) return null;
+        try {
+            // Utiliser supabase_id si disponible, sinon id
+            const teamId = team.supabase_id || team.id;
+            const { data, error } = await this.client
+                .from('teams')
+                .update({
+                    name: team.name,
+                    category: team.category || '',
+                    color: team.color || '#3498db',
+                    description: team.description || null,
+                    logo_url: team.logo_url || null,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', teamId)
+                .select();
+            if (error) throw error;
+            return data[0];
+        } catch (error) {
+            console.error('❌ Erreur mise à jour équipe:', error);
             return null;
         }
     }
@@ -92,38 +100,27 @@ class SupabaseSync {
         try {
             const { data, error } = await this.client
                 .from('teams')
-                .select('*, players(*)');
+                .select('*, players(*)')
+                .order('created_at', { ascending: false });
+            
             if (error) throw error;
-            console.log('Ã¢Å“â€¦ Ãƒâ€°quipes tÃƒÂ©lÃƒÂ©chargÃƒÂ©es:', data.length);
-            return data;
-        } catch (error) {
-            console.error('Ã¢ÂÅ’ Erreur tÃƒÂ©lÃƒÂ©chargement ÃƒÂ©quipes:', error);
-            return [];
-        }
-    }
 
-    async updateTeamRemote(team) {
-        if (!this.isReady()) return null;
-        try {
-            const { data, error } = await this.client
-                .from('teams')
-                .update({
-                    name: team.name,
-                    category: team.category,
-                    color: team.color,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', team.id)
-                .select();
-            if (error) throw error;
-            // Convertir la position en franÃ§ais pour le retour
-            if (data && data[0]) {
-                data[0].position = this.convertCodeToPosition(data[0].position);
+            // Convertir les positions en français
+            if (data) {
+                data.forEach(team => {
+                    if (team.players) {
+                        team.players.forEach(player => {
+                            player.position = this.convertCodeToPosition(player.position);
+                        });
+                    }
+                });
             }
-            return data[0];
+
+            console.log('✅ Équipes téléchargées:', data?.length || 0);
+            return data || [];
         } catch (error) {
-            console.error('Ã¢ÂÅ’ Erreur mise ÃƒÂ  jour ÃƒÂ©quipe:', error);
-            return null;
+            console.error('❌ Erreur téléchargement équipes:', error);
+            return [];
         }
     }
 
@@ -135,10 +132,10 @@ class SupabaseSync {
                 .delete()
                 .eq('id', teamId);
             if (error) throw error;
-            console.log('Ã¢Å“â€¦ Ãƒâ€°quipe supprimÃƒÂ©e');
+            console.log('✅ Équipe supprimée');
             return true;
         } catch (error) {
-            console.error('Ã¢ÂÅ’ Erreur suppression ÃƒÂ©quipe:', error);
+            console.error('❌ Erreur suppression équipe:', error);
             return false;
         }
     }
@@ -148,23 +145,32 @@ class SupabaseSync {
     async addPlayerRemote(player) {
         if (!this.isReady()) return null;
         try {
+            // CORRECTION : Utiliser team_supabase_id au lieu de team_id local
+            const teamId = player.team_supabase_id || player.team_id;
+            
+            // Vérifier que teamId est un UUID valide
+            if (!teamId || typeof teamId !== 'string' || teamId.startsWith('team_')) {
+                console.error('❌ team_id invalide (pas un UUID):', teamId);
+                return null;
+            }
+
             const { data, error } = await this.client
                 .from('players')
                 .insert([{
-                    team_id: player.team_id,
+                    team_id: teamId,  // Utiliser l'UUID Supabase
                     name: player.name,
                     position: this.convertPositionToCode(player.position),
                     number: player.number ? String(player.number) : null
                 }])
                 .select();
             if (error) throw error;
-            // Convertir la position en franÃ§ais pour le retour
+            // Convertir la position en français pour le retour
             if (data && data[0]) {
                 data[0].position = this.convertCodeToPosition(data[0].position);
             }
             return data[0];
         } catch (error) {
-            console.error('Ã¢ÂÅ’ Erreur ajout joueuse:', error);
+            console.error('❌ Erreur ajout joueuse:', error);
             return null;
         }
     }
@@ -183,13 +189,13 @@ class SupabaseSync {
                 .eq('id', player.id)
                 .select();
             if (error) throw error;
-            // Convertir la position en franÃ§ais pour le retour
+            // Convertir la position en français pour le retour
             if (data && data[0]) {
                 data[0].position = this.convertCodeToPosition(data[0].position);
             }
             return data[0];
         } catch (error) {
-            console.error('Ã¢ÂÅ’ Erreur mise ÃƒÂ  jour joueuse:', error);
+            console.error('❌ Erreur mise à jour joueuse:', error);
             return null;
         }
     }
@@ -204,7 +210,7 @@ class SupabaseSync {
             if (error) throw error;
             return true;
         } catch (error) {
-            console.error('Ã¢ÂÅ’ Erreur suppression joueuse:', error);
+            console.error('❌ Erreur suppression joueuse:', error);
             return false;
         }
     }
@@ -219,103 +225,50 @@ class SupabaseSync {
                 .insert([{
                     team_id: match.team_id,
                     opponent_name: match.opponent_name,
-                    venue: match.venue,
+                    opponent_goals: match.opponent_goals || 0,
+                    team_goals: match.team_goals || 0,
+                    venue: match.venue || null,
                     match_date: match.match_date || new Date().toISOString(),
-                    status: 'in_progress'
+                    status: match.status || 'pending'
                 }])
                 .select();
             if (error) throw error;
-            console.log('Ã¢Å“â€¦ Match crÃƒÂ©ÃƒÂ©:', match.opponent_name);
             return data[0];
         } catch (error) {
-            console.error('Ã¢ÂÅ’ Erreur crÃƒÂ©ation match:', error);
+            console.error('❌ Erreur création match:', error);
             return null;
         }
     }
-
-    async updateMatchRemote(match) {
-        if (!this.isReady()) return null;
-        try {
-            const { data, error } = await this.client
-                .from('matches')
-                .update({
-                    score_team: match.score_team,
-                    score_opponent: match.score_opponent,
-                    half: match.half,
-                    match_time: match.match_time,
-                    status: match.status,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', match.id)
-                .select();
-            if (error) throw error;
-            // Convertir la position en franÃ§ais pour le retour
-            if (data && data[0]) {
-                data[0].position = this.convertCodeToPosition(data[0].position);
-            }
-            return data[0];
-        } catch (error) {
-            console.error('Ã¢ÂÅ’ Erreur mise ÃƒÂ  jour match:', error);
-            return null;
-        }
-    }
-
-    // ===== Ãƒâ€°VÃƒâ€°NEMENTS =====
 
     async recordEventRemote(event) {
         if (!this.isReady()) return null;
         try {
             const { data, error } = await this.client
-                .from('match_events')
+                .from('events')
                 .insert([{
                     match_id: event.match_id,
-                    team_id: event.team_id,
                     player_id: event.player_id,
+                    team_id: event.team_id,
                     event_type: event.event_type,
-                    event_details: event.event_details,
-                    match_minute: event.match_minute,
-                    half: event.half,
-                    is_team_event: event.is_team_event
+                    minute: event.minute || null,
+                    second: event.second || null,
+                    description: event.description || null
                 }])
                 .select();
             if (error) throw error;
-            // Convertir la position en franÃ§ais pour le retour
-            if (data && data[0]) {
-                data[0].position = this.convertCodeToPosition(data[0].position);
-            }
             return data[0];
         } catch (error) {
-            console.error('Ã¢ÂÅ’ Erreur enregistrement ÃƒÂ©vÃƒÂ©nement:', error);
+            console.error('❌ Erreur enregistrement événement:', error);
             return null;
         }
     }
 
-    // ===== COMPOSITIONS =====
-
-    async saveCompositionRemote(composition) {
-        if (!this.isReady()) return null;
-        try {
-            const { data, error } = await this.client
-                .from('match_compositions')
-                .insert(composition)
-                .select();
-            if (error) throw error;
-            console.log('Ã¢Å“â€¦ Composition sauvegardÃƒÂ©e');
-            return data;
-        } catch (error) {
-            console.error('Ã¢ÂÅ’ Erreur sauvegarde composition:', error);
-            return null;
-        }
-    }
-
-    // ===== STATS JOUEUR =====
-
-    async updatePlayerStatsRemote(stats) {
+    async updateMatchStatsRemote(stats) {
         if (!this.isReady()) return null;
         try {
             const { data, error } = await this.client
                 .from('player_match_stats')
-                .upsert([{
+                .insert([{
                     match_id: stats.match_id,
                     team_id: stats.team_id,
                     player_id: stats.player_id,
@@ -332,19 +285,18 @@ class SupabaseSync {
                 }])
                 .select();
             if (error) throw error;
-            // Convertir la position en franÃ§ais pour le retour
+            // Convertir la position en français pour le retour
             if (data && data[0]) {
                 data[0].position = this.convertCodeToPosition(data[0].position);
             }
             return data[0];
         } catch (error) {
-            console.error('Ã¢ÂÅ’ Erreur mise ÃƒÂ  jour stats:', error);
+            console.error('❌ Erreur mise à jour stats:', error);
             return null;
         }
     }
 
-    // ===== SYNC GÃƒâ€°NÃƒâ€°RALE =====
-
+    // ===== SYNC GÉNÉRALE =====
 
     async executeSync(operation) {
         const { operation: op, data } = operation;
@@ -352,7 +304,7 @@ class SupabaseSync {
         switch(op) {
             case 'createTeam':
                 const teamResult = await this.createTeamRemote(data);
-                return { success: !!teamResult, supabaseId: teamResult?.id };
+                return { success: !!teamResult, supabaseId: teamResult?.id, localId: data.id };
             case 'updateTeam':
                 return { success: !!(await this.updateTeamRemote(data)) };
             case 'deleteTeam':

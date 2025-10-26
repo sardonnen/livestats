@@ -6,6 +6,7 @@
  * teams: {
  *   [teamId]: {
  *     id, name, category, color, logo_url,
+ *     supabase_id: UUID Supabase de l'équipe,
  *     players: [{ id, name, position, number, supabase_id }],
  *     lastSync: timestamp
  *   }
@@ -56,7 +57,8 @@ class TeamManager {
             players: [],
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            synced: false
+            synced: false,
+            supabase_id: null // UUID Supabase sera stocké après sync
         };
 
         this.localData[teamId] = team;
@@ -139,6 +141,7 @@ class TeamManager {
         const player = {
             id: playerId,
             team_id: teamId,
+            team_supabase_id: team.supabase_id, // CORRECTION : Ajouter l'UUID Supabase de l'équipe
             name: name.trim(),
             position: position.trim(),
             number: number && number.toString().trim() !== '' ? parseInt(number) : 0,
@@ -271,23 +274,24 @@ class TeamManager {
                     if (result.success) {
                         syncedCount++;
                         
-                        // CORRECTION : Stocker le supabase_id retourné
-                        if (operation.operation === 'addPlayer' && result.supabaseId && result.localId) {
+                        // CORRECTION : Stocker les supabase_id retournés
+                        if (operation.operation === 'createTeam' && result.supabaseId && result.localId) {
+                            // Stocker l'UUID Supabase de l'équipe
+                            if (this.localData[result.localId]) {
+                                this.localData[result.localId].supabase_id = result.supabaseId;
+                                this.localData[result.localId].synced = true;
+                                console.log('✅ UUID Supabase équipe stocké:', result.localId, '→', result.supabaseId);
+                            }
+                        } else if (operation.operation === 'addPlayer' && result.supabaseId && result.localId) {
                             // Trouver le joueur local et stocker son supabase_id
                             for (const team of Object.values(this.localData)) {
                                 const player = team.players.find(p => p.id === result.localId);
                                 if (player) {
                                     player.supabase_id = result.supabaseId;
                                     player.synced = true;
-                                    console.log('✅ UUID Supabase stocké:', result.localId, '→', result.supabaseId);
+                                    console.log('✅ UUID Supabase joueuse stocké:', result.localId, '→', result.supabaseId);
                                     break;
                                 }
-                            }
-                        } else if (operation.operation === 'createTeam' && result.supabaseId) {
-                            // Stocker l'UUID Supabase de l'équipe
-                            if (this.localData[operation.data.id]) {
-                                this.localData[operation.data.id].supabase_id = result.supabaseId;
-                                this.localData[operation.data.id].synced = true;
                             }
                         } else {
                             // Marquer comme synced pour les autres opérations
@@ -365,6 +369,15 @@ class TeamManager {
                 }
             }
 
+            // CORRECTION : Mettre à jour team_supabase_id des joueuses locales
+            if (localTeam.players) {
+                localTeam.players.forEach(player => {
+                    if (!player.team_supabase_id) {
+                        player.team_supabase_id = localTeam.supabase_id;
+                    }
+                });
+            }
+
             // Fusionner les joueuses
             if (remoteTeam.players && Array.isArray(remoteTeam.players)) {
                 for (const remotePlayer of remoteTeam.players) {
@@ -379,6 +392,7 @@ class TeamManager {
                             id: localPlayerId,
                             supabase_id: remotePlayer.id,
                             team_id: localTeam.id,
+                            team_supabase_id: localTeam.supabase_id, // CORRECTION
                             synced: true
                         };
                         localTeam.players.push(localPlayer);
@@ -388,6 +402,7 @@ class TeamManager {
                             id: localPlayer.id, // Garder l'ID local
                             supabase_id: remotePlayer.id,
                             team_id: localTeam.id,
+                            team_supabase_id: localTeam.supabase_id, // CORRECTION
                             synced: true
                         });
                     }
