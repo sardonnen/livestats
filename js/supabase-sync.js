@@ -51,14 +51,13 @@ class SupabaseSync {
     async createTeamRemote(team) {
         if (!this.isReady()) return null;
         try {
+            // CORRECTION V3 : Colonnes minimales uniquement (sans description/logo_url)
             const { data, error } = await this.client
                 .from('teams')
                 .insert([{
                     name: team.name,
                     category: team.category || '',
-                    color: team.color || '#3498db',
-                    description: team.description || null,
-                    logo_url: team.logo_url || null
+                    color: team.color || '#3498db'
                 }])
                 .select();
             if (error) throw error;
@@ -75,14 +74,14 @@ class SupabaseSync {
         try {
             // Utiliser supabase_id si disponible, sinon id
             const teamId = team.supabase_id || team.id;
+            
+            // CORRECTION V3 : Colonnes minimales uniquement
             const { data, error } = await this.client
                 .from('teams')
                 .update({
                     name: team.name,
                     category: team.category || '',
                     color: team.color || '#3498db',
-                    description: team.description || null,
-                    logo_url: team.logo_url || null,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', teamId)
@@ -145,7 +144,7 @@ class SupabaseSync {
     async addPlayerRemote(player) {
         if (!this.isReady()) return null;
         try {
-            // CORRECTION : Utiliser team_supabase_id au lieu de team_id local
+            // CORRECTION V2 : Utiliser team_supabase_id au lieu de team_id local
             const teamId = player.team_supabase_id || player.team_id;
             
             // Vérifier que teamId est un UUID valide
