@@ -1,5 +1,5 @@
 // ===== SUPABASE SYNC MODULE =====
-// Synchronisation bidirectionnelle localStorage â†” Supabase
+// Synchronisation bidirectionnelle localStorage Ã¢â€ â€ Supabase
 
 class SupabaseSync {
     constructor(supabaseUrl, supabaseKey) {
@@ -21,14 +21,14 @@ class SupabaseSync {
                 this.client = window.supabase.createClient(this.url, this.key);
                 this.ready = true;
                 this.connectionStatus = 'connected';
-                console.log('âœ… Client Supabase initialisÃ©');
+                console.log('Ã¢Å“â€¦ Client Supabase initialisÃƒÂ©');
                 return true;
             } else {
-                console.warn('âš ï¸ Supabase JS SDK non chargÃ©');
+                console.warn('Ã¢Å¡Â Ã¯Â¸Â Supabase JS SDK non chargÃƒÂ©');
                 return false;
             }
         } catch (error) {
-            console.error('âŒ Erreur init Supabase:', error);
+            console.error('Ã¢ÂÅ’ Erreur init Supabase:', error);
             this.ready = false;
             return false;
         }
@@ -39,12 +39,12 @@ class SupabaseSync {
     }
 
     /**
-     * Convertir position française → code court Supabase
+     * Convertir position franÃ§aise â†’ code court Supabase
      */
     convertPositionToCode(position) {
         const positionMap = {
             'gardienne': 'GK',
-            'défenseuse': 'DF',
+            'dÃ©fenseuse': 'DF',
             'milieu': 'MF',
             'attaquante': 'FW'
         };
@@ -52,19 +52,19 @@ class SupabaseSync {
     }
 
     /**
-     * Convertir code court Supabase → position française
+     * Convertir code court Supabase â†’ position franÃ§aise
      */
     convertCodeToPosition(code) {
         const codeMap = {
             'GK': 'gardienne',
-            'DF': 'défenseuse',
+            'DF': 'dÃ©fenseuse',
             'MF': 'milieu',
             'FW': 'attaquante'
         };
         return codeMap[code?.toUpperCase()] || code;
     }
 
-    // ===== Ã‰QUIPES =====
+    // ===== Ãƒâ€°QUIPES =====
 
     async createTeamRemote(team) {
         if (!this.isReady()) return null;
@@ -79,10 +79,10 @@ class SupabaseSync {
                 }])
                 .select();
             if (error) throw error;
-            console.log('âœ… Ã‰quipe crÃ©Ã©e:', team.name);
+            console.log('Ã¢Å“â€¦ Ãƒâ€°quipe crÃƒÂ©ÃƒÂ©e:', team.name);
             return data[0];
         } catch (error) {
-            console.error('âŒ Erreur crÃ©ation Ã©quipe:', error);
+            console.error('Ã¢ÂÅ’ Erreur crÃƒÂ©ation ÃƒÂ©quipe:', error);
             return null;
         }
     }
@@ -94,10 +94,10 @@ class SupabaseSync {
                 .from('teams')
                 .select('*, players(*)');
             if (error) throw error;
-            console.log('âœ… Ã‰quipes tÃ©lÃ©chargÃ©es:', data.length);
+            console.log('Ã¢Å“â€¦ Ãƒâ€°quipes tÃƒÂ©lÃƒÂ©chargÃƒÂ©es:', data.length);
             return data;
         } catch (error) {
-            console.error('âŒ Erreur tÃ©lÃ©chargement Ã©quipes:', error);
+            console.error('Ã¢ÂÅ’ Erreur tÃƒÂ©lÃƒÂ©chargement ÃƒÂ©quipes:', error);
             return [];
         }
     }
@@ -116,13 +116,13 @@ class SupabaseSync {
                 .eq('id', team.id)
                 .select();
             if (error) throw error;
-            // Convertir la position en français pour le retour
+            // Convertir la position en franÃ§ais pour le retour
             if (data && data[0]) {
                 data[0].position = this.convertCodeToPosition(data[0].position);
             }
             return data[0];
         } catch (error) {
-            console.error('âŒ Erreur mise Ã  jour Ã©quipe:', error);
+            console.error('Ã¢ÂÅ’ Erreur mise ÃƒÂ  jour ÃƒÂ©quipe:', error);
             return null;
         }
     }
@@ -135,10 +135,10 @@ class SupabaseSync {
                 .delete()
                 .eq('id', teamId);
             if (error) throw error;
-            console.log('âœ… Ã‰quipe supprimÃ©e');
+            console.log('Ã¢Å“â€¦ Ãƒâ€°quipe supprimÃƒÂ©e');
             return true;
         } catch (error) {
-            console.error('âŒ Erreur suppression Ã©quipe:', error);
+            console.error('Ã¢ÂÅ’ Erreur suppression ÃƒÂ©quipe:', error);
             return false;
         }
     }
@@ -158,13 +158,13 @@ class SupabaseSync {
                 }])
                 .select();
             if (error) throw error;
-            // Convertir la position en français pour le retour
+            // Convertir la position en franÃ§ais pour le retour
             if (data && data[0]) {
                 data[0].position = this.convertCodeToPosition(data[0].position);
             }
             return data[0];
         } catch (error) {
-            console.error('âŒ Erreur ajout joueuse:', error);
+            console.error('Ã¢ÂÅ’ Erreur ajout joueuse:', error);
             return null;
         }
     }
@@ -183,13 +183,13 @@ class SupabaseSync {
                 .eq('id', player.id)
                 .select();
             if (error) throw error;
-            // Convertir la position en français pour le retour
+            // Convertir la position en franÃ§ais pour le retour
             if (data && data[0]) {
                 data[0].position = this.convertCodeToPosition(data[0].position);
             }
             return data[0];
         } catch (error) {
-            console.error('âŒ Erreur mise Ã  jour joueuse:', error);
+            console.error('Ã¢ÂÅ’ Erreur mise ÃƒÂ  jour joueuse:', error);
             return null;
         }
     }
@@ -204,7 +204,7 @@ class SupabaseSync {
             if (error) throw error;
             return true;
         } catch (error) {
-            console.error('âŒ Erreur suppression joueuse:', error);
+            console.error('Ã¢ÂÅ’ Erreur suppression joueuse:', error);
             return false;
         }
     }
@@ -225,10 +225,10 @@ class SupabaseSync {
                 }])
                 .select();
             if (error) throw error;
-            console.log('âœ… Match crÃ©Ã©:', match.opponent_name);
+            console.log('Ã¢Å“â€¦ Match crÃƒÂ©ÃƒÂ©:', match.opponent_name);
             return data[0];
         } catch (error) {
-            console.error('âŒ Erreur crÃ©ation match:', error);
+            console.error('Ã¢ÂÅ’ Erreur crÃƒÂ©ation match:', error);
             return null;
         }
     }
@@ -249,18 +249,18 @@ class SupabaseSync {
                 .eq('id', match.id)
                 .select();
             if (error) throw error;
-            // Convertir la position en français pour le retour
+            // Convertir la position en franÃ§ais pour le retour
             if (data && data[0]) {
                 data[0].position = this.convertCodeToPosition(data[0].position);
             }
             return data[0];
         } catch (error) {
-            console.error('âŒ Erreur mise Ã  jour match:', error);
+            console.error('Ã¢ÂÅ’ Erreur mise ÃƒÂ  jour match:', error);
             return null;
         }
     }
 
-    // ===== Ã‰VÃ‰NEMENTS =====
+    // ===== Ãƒâ€°VÃƒâ€°NEMENTS =====
 
     async recordEventRemote(event) {
         if (!this.isReady()) return null;
@@ -279,13 +279,13 @@ class SupabaseSync {
                 }])
                 .select();
             if (error) throw error;
-            // Convertir la position en français pour le retour
+            // Convertir la position en franÃ§ais pour le retour
             if (data && data[0]) {
                 data[0].position = this.convertCodeToPosition(data[0].position);
             }
             return data[0];
         } catch (error) {
-            console.error('âŒ Erreur enregistrement Ã©vÃ©nement:', error);
+            console.error('Ã¢ÂÅ’ Erreur enregistrement ÃƒÂ©vÃƒÂ©nement:', error);
             return null;
         }
     }
@@ -300,10 +300,10 @@ class SupabaseSync {
                 .insert(composition)
                 .select();
             if (error) throw error;
-            console.log('âœ… Composition sauvegardÃ©e');
+            console.log('Ã¢Å“â€¦ Composition sauvegardÃƒÂ©e');
             return data;
         } catch (error) {
-            console.error('âŒ Erreur sauvegarde composition:', error);
+            console.error('Ã¢ÂÅ’ Erreur sauvegarde composition:', error);
             return null;
         }
     }
@@ -332,35 +332,49 @@ class SupabaseSync {
                 }])
                 .select();
             if (error) throw error;
-            // Convertir la position en français pour le retour
+            // Convertir la position en franÃ§ais pour le retour
             if (data && data[0]) {
                 data[0].position = this.convertCodeToPosition(data[0].position);
             }
             return data[0];
         } catch (error) {
-            console.error('âŒ Erreur mise Ã  jour stats:', error);
+            console.error('Ã¢ÂÅ’ Erreur mise ÃƒÂ  jour stats:', error);
             return null;
         }
     }
 
-    // ===== SYNC GÃ‰NÃ‰RALE =====
+    // ===== SYNC GÃƒâ€°NÃƒâ€°RALE =====
+
 
     async executeSync(operation) {
         const { operation: op, data } = operation;
         
         switch(op) {
             case 'createTeam':
-                return { success: !!(await this.createTeamRemote(data)) };
+                const teamResult = await this.createTeamRemote(data);
+                return { success: !!teamResult, supabaseId: teamResult?.id };
             case 'updateTeam':
                 return { success: !!(await this.updateTeamRemote(data)) };
             case 'deleteTeam':
-                return { success: await this.deleteTeamRemote(data.id) };
+                return { success: await this.deleteTeamRemote(data.supabase_id || data.id) };
             case 'addPlayer':
-                return { success: !!(await this.addPlayerRemote(data)) };
+                const playerResult = await this.addPlayerRemote(data);
+                return { success: !!playerResult, supabaseId: playerResult?.id, localId: data.id };
             case 'updatePlayer':
-                return { success: !!(await this.updatePlayerRemote(data)) };
+                // Utiliser supabase_id pour les mises à jour si disponible
+                if (data.supabase_id) {
+                    const playerData = { ...data, id: data.supabase_id };
+                    return { success: !!(await this.updatePlayerRemote(playerData)) };
+                }
+                return { success: false };
             case 'removePlayer':
-                return { success: await this.removePlayerRemote(data.id) };
+                // Utiliser supabase_id si disponible, sinon ignorer silencieusement
+                if (data.supabase_id) {
+                    return { success: await this.removePlayerRemote(data.supabase_id) };
+                } else {
+                    console.warn('⚠️ Pas de supabase_id pour la suppression, ignorer:', data.id);
+                    return { success: true }; // Considérer comme réussi localement
+                }
             case 'createMatch':
                 return { success: !!(await this.createMatchRemote(data)) };
             case 'recordEvent':
@@ -376,11 +390,11 @@ class SupabaseSync {
 if (typeof window !== 'undefined') {
     window.supabaseSync = null;
     
-    // Ã€ initialiser aprÃ¨s avoir dÃ©fini SUPABASE_URL et SUPABASE_KEY
+    // À initialiser après avoir défini SUPABASE_URL et SUPABASE_KEY
     window.initSupabaseSync = function(url, key) {
         window.supabaseSync = new SupabaseSync(url, key);
         return window.supabaseSync;
     };
     
-    console.log('📦 Module SupabaseSync chargÃ©');
+    console.log('📦 Module SupabaseSync chargé');
 }
