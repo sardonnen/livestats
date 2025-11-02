@@ -69,10 +69,10 @@
                             <label for="playerPosition">Position *</label>
                             <select id="playerPosition" required>
                                 <option value="">-- Sélectionner --</option>
-                                <option value="gardienne">🥅 Gardienne</option>
-                                <option value="défenseuse">🛡️ Défenseuse</option>
-                                <option value="milieu">🎯 Milieu</option>
-                                <option value="attaquante">⚔️ Attaquante</option>
+                                <option value="GK">🥅 Gardienne (GK)</option>
+                                <option value="DF">🛡️ Défenseuse (DF)</option>
+                                <option value="MF">🎯 Milieu (MF)</option>
+                                <option value="FW">⚔️ Attaquante (FW)</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -85,14 +85,14 @@
 
                 <!-- Liste des joueuses -->
                 <div>
-                    <h3>👥 Joueuses de l'équipe</h3>
-                    <div id="playersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
-                        <p style="text-align: center; color: #bdc3c7;">Aucune joueuse ajoutée.</p>
+                    <h3>👥 Joueuses de l'équipe (<span id="playerCount">0</span>)</h3>
+                    <div id="playersList" class="players-grid">
+                        <p style="text-align: center; color: #bdc3c7; grid-column: 1/-1;">Aucune joueuse ajoutée.</p>
                     </div>
                 </div>
 
                 <!-- Actions équipe -->
-                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #ecf0f1; display: flex; gap: 1rem; flex-wrap: wrap;">
+                <div class="action-buttons">
                     <button class="btn btn-warning" id="editTeamBtn">✏️ Modifier</button>
                     <button class="btn btn-danger" id="deleteTeamBtn">🗑️ Supprimer</button>
                     <button class="btn btn-secondary" id="closeTeamBtn">✖️ Fermer</button>
@@ -101,18 +101,24 @@
         </main>
     </div>
 
-    <!-- Scripts - ORDRE CRITIQUE : NE PAS MODIFIER -->
-    <!-- 1. SDK Supabase -->
+    <!-- Chargement des scripts dans l'ordre -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- 2. Modules Backend (dans l'ordre) -->
     <script src="../js/supabase-sync.js"></script>
     <script src="../js/supabase-config.js"></script>
     <script src="../js/data-manager.js"></script>
     <script src="../js/team-manager.js"></script>
     <script src="../js/notification.js"></script>
-    
-    <!-- 3. Logique UI de la page -->
     <script src="../js/teams.js"></script>
+
+    <script>
+        // Initialiser la page quand le DOM est prêt
+        document.addEventListener('DOMContentLoaded', () => {
+            window.teamsPage = new TeamsPageManager();
+            window.teamsPage.init();
+            
+            // Auto-sync toutes les 15 secondes
+            window.teamsPage.enableAutoSync(15000);
+        });
+    </script>
 </body>
 </html>
