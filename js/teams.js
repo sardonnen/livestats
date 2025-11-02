@@ -257,9 +257,10 @@ class TeamsPageManager {
     removePlayer(teamId, playerId) {
         const player = window.teamManager.getPlayer(teamId, playerId);
         if (confirm(`⚠️ Supprimer ${player.name} ?`)) {
-            window.teamManager.removePlayerFromTeam(teamId, playerId);
+            window.teamManager.removePlayer(teamId, playerId);
             this.showNotification(`✅ Joueuse supprimée`, 'success');
             this.updatePlayersList(teamId);
+            this.updateTeamsList();
         }
     }
 
