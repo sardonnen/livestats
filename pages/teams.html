@@ -109,16 +109,5 @@
     <script src="../js/team-manager.js"></script>
     <script src="../js/notification.js"></script>
     <script src="../js/teams.js"></script>
-
-    <script>
-        // Initialiser la page quand le DOM est prêt
-        document.addEventListener('DOMContentLoaded', () => {
-            window.teamsPage = new TeamsPageManager();
-            window.teamsPage.init();
-            
-            // Auto-sync toutes les 15 secondes
-            window.teamsPage.enableAutoSync(15000);
-        });
-    </script>
 </body>
 </html>

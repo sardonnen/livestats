@@ -27,15 +27,12 @@ class TeamsPageManager {
         this.setupEventListeners();
         this.updateTeamsList();
         
-        console.log('✅ TeamsPage prêt');
-    }
-
-    // Activer l'auto-sync avec Supabase
-    enableAutoSync(interval = 15000) {
+        // Auto-sync avec Supabase
         if (window.teamManager) {
-            window.teamManager.enableAutoSync(interval);
-            console.log('✅ Auto-sync activée');
+            window.teamManager.enableAutoSync(15000);
         }
+        
+        console.log('✅ TeamsPage prêt');
     }
 
     // ===== SETUP ÉVÉNEMENTS =====
@@ -185,6 +182,7 @@ class TeamsPageManager {
             this.showNotification(`✅ Joueuse "${name}" ajoutée !`, 'success');
             document.getElementById('addPlayerForm').reset();
             this.updatePlayersList(this.selectedTeamId);
+            this.updateTeamsList(); // Mettre à jour le compteur d'équipes
         }
     }
 
@@ -256,11 +254,16 @@ class TeamsPageManager {
 
     removePlayer(teamId, playerId) {
         const player = window.teamManager.getPlayer(teamId, playerId);
+        if (!player) {
+            this.showNotification('❌ Joueuse introuvable', 'error');
+            return;
+        }
+        
         if (confirm(`⚠️ Supprimer ${player.name} ?`)) {
             window.teamManager.removePlayer(teamId, playerId);
-            this.showNotification(`✅ Joueuse supprimée`, 'success');
-            this.updatePlayersList(teamId);
-            this.updateTeamsList();
+            this.showNotification('✅ Joueuse supprimée', 'success');
+            this.updatePlayersList(this.selectedTeamId);
+            this.updateTeamsList(); // Mettre à jour le compteur d'équipes
         }
     }
 
@@ -276,3 +279,22 @@ class TeamsPageManager {
 
 // ===== INITIALISATION GLOBALE =====
 console.log('📦 Module TeamsPageManager chargé');
+
+let teamsPage = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    teamsPage = new TeamsPageManager();
+    teamsPage.init();
+});
+
+// ===== SYNC SUPABASE =====
+window.addEventListener('online', () => {
+    console.log('✅ Connexion internet rétablie');
+    if (window.teamManager && window.supabaseSync?.isReady()) {
+        window.teamManager.syncWithSupabase().then(() => {
+            if (teamsPage) {
+                teamsPage.updateTeamsList();
+            }
+        });
+    }
+});
