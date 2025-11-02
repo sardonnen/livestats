@@ -27,10 +27,11 @@ class TeamsPageManager {
         this.setupEventListeners();
         this.updateTeamsList();
         
-        // Auto-sync avec Supabase
-        if (window.teamManager) {
-            window.teamManager.enableAutoSync(15000);
-        }
+        // Auto-sync avec Supabase (DÉSACTIVÉE au démarrage pour éviter le gel)
+        // Commenté temporairement - À activer après diagnostic
+        // if (window.teamManager) {
+        //     window.teamManager.enableAutoSync(15000);
+        // }
         
         console.log('✅ TeamsPage prêt');
     }
@@ -285,16 +286,4 @@ let teamsPage = null;
 document.addEventListener('DOMContentLoaded', function() {
     teamsPage = new TeamsPageManager();
     teamsPage.init();
-});
-
-// ===== SYNC SUPABASE =====
-window.addEventListener('online', () => {
-    console.log('✅ Connexion internet rétablie');
-    if (window.teamManager && window.supabaseSync?.isReady()) {
-        window.teamManager.syncWithSupabase().then(() => {
-            if (teamsPage) {
-                teamsPage.updateTeamsList();
-            }
-        });
-    }
 });
