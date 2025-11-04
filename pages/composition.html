@@ -6,171 +6,98 @@
     <title>📋 Composition - Football Stats Manager</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+    
     <style>
-        /* Terrain compact et formations */
-        .field-container {
+        /* Styles spécifiques pour le terrain */
+        #footballField {
             background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            padding: 1.5rem;
             border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            position: relative;
-            min-height: 320px;
-            max-height: 420px;
-        }
-
-        .field-grid {
-            display: grid;
-            grid-template-rows: auto 1fr 1fr 1fr 1fr auto;
-            gap: 0.5rem;
-            height: 100%;
-            padding: 0.5rem 0;
-        }
-
-        .field-line {
+            margin-bottom: 2rem;
+            min-height: 500px;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            min-height: 50px;
-            position: relative;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 12px;
         }
-
+        
         .field-label {
             color: white;
             font-weight: bold;
-            font-size: 0.9rem;
             text-align: center;
-            padding: 0.25rem;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-
-        .player-badge {
-            background: rgba(255, 255, 255, 0.9);
-            color: #2c3e50;
-            padding: 0.5rem 0.7rem;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            white-space: nowrap;
-            cursor: move;
-            transition: all 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            user-select: none;
-        }
-
-        .player-badge:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-
-        .player-badge.dragging {
-            opacity: 0.5;
-            cursor: grabbing;
-        }
-
-        .player-badge.gk {
-            background: #fff9c4;
-            border-color: #fbc02d;
-        }
-
-        .player-badge.df {
-            background: #b3e5fc;
-            border-color: #0288d1;
-        }
-
-        .player-badge.mf {
-            background: #f3e5f5;
-            border-color: #8e24aa;
-        }
-
-        .player-badge.fw {
-            background: #ffccbc;
-            border-color: #ff5722;
-        }
-
-        .formation-selector {
+        
+        .field-line {
             display: flex;
-            gap: 0.5rem;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .zones-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            gap: 8px;
             flex-wrap: wrap;
-            margin-bottom: 1rem;
         }
-
-        .formation-btn {
-            padding: 0.5rem 1rem;
-            border: 2px solid #ecf0f1;
-            border-radius: 6px;
-            background: white;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
-        }
-
-        .formation-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-
-        .formation-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
+        
         .drop-zone {
-            min-height: 55px;
+            min-width: 60px;
+            min-height: 60px;
+            background: rgba(255,255,255,0.1);
             border: 2px dashed rgba(255,255,255,0.3);
             border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            padding: 0.5rem;
-            flex: 1;
-            background: rgba(255,255,255,0.05);
-        }
-
-        .drop-zone.drag-over {
-            background: rgba(255,255,255,0.2);
-            border-color: rgba(255,255,255,0.8);
-            border-style: solid;
-        }
-
-        .saved-composition-banner {
-            background: #3498db;
-            color: white;
-            padding: 0.75rem;
-            border-radius: 6px;
-            margin-bottom: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .remove-player-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 0.15rem 0.4rem;
-            border-radius: 4px;
-            font-size: 0.65rem;
             cursor: pointer;
-            margin-left: 0.3rem;
-            opacity: 0;
-            transition: opacity 0.2s;
+            transition: all 0.3s ease;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.5);
         }
-
-        .player-badge:hover .remove-player-btn {
-            opacity: 1;
+        
+        .drop-zone:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        
+        .player-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            cursor: grab;
+            transition: all 0.3s ease;
+            border: 2px solid #ecf0f1;
+        }
+        
+        .player-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .player-card:active {
+            cursor: grabbing;
+        }
+        
+        .line-label {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+            margin-bottom: 4px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1>📋 Composition d'Équipe</h1>
-            <p>Sélectionnez et positionnez vos joueuses</p>
+            <h1>📋 Composition d'Équipe v3.1</h1>
+            <p>Formations Multi-Lignes (4-2-3-1 corrigé)</p>
         </header>
 
         <!-- Navigation -->
@@ -198,91 +125,69 @@
                 </p>
             </section>
 
-            <!-- Bannière composition sauvegardée -->
-            <div id="savedCompositionBanner" style="display: none;" class="saved-composition-banner">
-                <span>📋 <strong>Composition sauvegardée trouvée !</strong></span>
-                <button id="loadCompositionBtn" class="btn btn-primary" style="padding: 0.5rem 1rem;">📂 Charger</button>
-            </div>
-
             <!-- Composition (visible après sélection) -->
             <section id="compositionSection" class="team-card" style="display: none;">
                 <h2>⚽ Composition : <span id="selectedTeamDisplay"></span></h2>
                 
+                <!-- Sélection formation -->
+                <div class="form-group">
+                    <label for="formationSelector">Formation tactique</label>
+                    <select id="formationSelector">
+                        <option value="4-4-2">4-4-2 (Classique)</option>
+                        <option value="4-3-3">4-3-3 (Offensive)</option>
+                        <option value="4-2-3-1">4-2-3-1 (Milieux doubles lignes) ✨</option>
+                        <option value="3-5-2">3-5-2 (Milieu renforcé)</option>
+                        <option value="5-3-2">5-3-2 (Défensive)</option>
+                        <option value="3-4-3">3-4-3 (Très offensive)</option>
+                    </select>
+                </div>
+                
                 <!-- Statut composition -->
-                <div id="compositionStatus" style="background: #ecf0f1; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                    <p style="margin: 0; font-weight: bold;">Statut: <span id="statusText">Équipe incomplète</span></p>
+                <div id="compositionStatus" style="background: #ecf0f1; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <p id="statusText" style="margin: 0; font-weight: bold;">Équipe incomplète</p>
                 </div>
 
-                <!-- Sélection de formation -->
-                <div style="margin-bottom: 1rem;">
-                    <h3 style="margin-bottom: 0.5rem;">🎯 Choisir une formation</h3>
-                    <div class="formation-selector" id="formationSelector">
-                        <button class="formation-btn active" data-formation="4-4-2">4-4-2</button>
-                        <button class="formation-btn" data-formation="4-3-3">4-3-3</button>
-                        <button class="formation-btn" data-formation="4-2-3-1">4-2-3-1</button>
-                        <button class="formation-btn" data-formation="3-5-2">3-5-2</button>
-                        <button class="formation-btn" data-formation="3-4-3">3-4-3</button>
-                        <button class="formation-btn" data-formation="5-3-2">5-3-2</button>
-                    </div>
-                </div>
-
-                <!-- Visualisation terrain DRAG & DROP -->
-                <div class="field-container">
-                    <p style="color: white; text-align: center; font-size: 0.85rem; margin-bottom: 0.5rem;">
-                        🖱️ Glissez-déposez les joueuses pour les positionner
-                    </p>
-                    <div class="field-grid">
-                        <div class="field-label">⬆️ ADVERSAIRE</div>
-                        
-                        <!-- Attaque - zones créées dynamiquement -->
-                        <div class="field-line" id="attLine"></div>
-                        
-                        <!-- Milieu - zones créées dynamiquement -->
-                        <div class="field-line" id="midLine"></div>
-                        
-                        <!-- Défense - zones créées dynamiquement -->
-                        <div class="field-line" id="defLine"></div>
-                        
-                        <!-- Gardien -->
-                        <div class="field-line">
-                            <div id="zoneGK" class="drop-zone" data-zone="gk"></div>
-                        </div>
-                        
-                        <div class="field-label">⬇️ NOTRE BUT</div>
-                    </div>
+                <!-- Visualisation terrain -->
+                <div id="footballField">
+                    <!-- Le terrain sera construit dynamiquement par le JS -->
                 </div>
 
                 <!-- Sélection des joueuses -->
-                <h3>👥 Joueuses disponibles (<span id="availableCount">0</span>)</h3>
-                <p style="font-size: 0.85rem; color: #7f8c8d; margin-bottom: 1rem;">
-                    💡 Glissez les joueuses vers le terrain pour les positionner
-                </p>
-                <div id="playersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; margin-bottom: 1.5rem;">
+                <h3>👥 Joueuses disponibles (glissez-déposez sur le terrain)</h3>
+                <div id="playersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
                     <p style="grid-column: 1/-1; text-align: center; color: #bdc3c7;">Sélectionnez une équipe d'abord</p>
-                </div>
-
-                <!-- Banc -->
-                <h3>🪑 Remplaçants (<span id="benchCount">0</span>/7)</h3>
-                <div id="benchList" class="drop-zone" data-zone="bench" style="display: flex; gap: 0.5rem; flex-wrap: wrap; min-height: 60px; margin-bottom: 1.5rem;">
                 </div>
 
                 <!-- Actions -->
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap; padding-top: 1.5rem; border-top: 1px solid #ecf0f1;">
-                    <button class="btn btn-success" id="validateBtn" disabled>✅ Valider et Sauvegarder</button>
+                    <button class="btn btn-success" id="validateBtn" disabled>✅ Valider la Composition</button>
                     <button class="btn btn-warning" id="clearBtn">🔄 Réinitialiser</button>
-                    <button class="btn btn-secondary" id="closeBtn">✖️ Fermer</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('compositionSection').style.display='none'">✖️ Fermer</button>
                 </div>
+            </section>
+            
+            <!-- Note explicative -->
+            <section class="team-card" style="background: #e8f5e9; border-left: 4px solid #4caf50;">
+                <h3>✨ Nouveauté v3.1 : Formations Multi-Lignes</h3>
+                <p><strong>Formation 4-2-3-1 corrigée :</strong></p>
+                <ul>
+                    <li>✅ <strong>1 ligne</strong> pour l'attaquante</li>
+                    <li>✅ <strong>1 ligne</strong> pour les 3 milieux offensifs</li>
+                    <li>✅ <strong>1 ligne</strong> pour les 2 milieux défensifs</li>
+                    <li>✅ <strong>1 ligne</strong> pour les 4 défenseuses</li>
+                </ul>
+                <p>Le terrain affiche maintenant correctement <strong>2 lignes distinctes</strong> pour les milieux !</p>
             </section>
         </main>
     </div>
 
-    <!-- Scripts BACKEND uniquement -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../js/storage.js"></script>
     <script src="../js/supabase-sync.js"></script>
     <script src="../js/supabase-config.js"></script>
     <script src="../js/team-manager.js"></script>
     <script src="../js/notification.js"></script>
-    <script src="../js/composition.js"></script>
+    <script src="../js/composition-v3.1.js"></script>
 </body>
 </html>
