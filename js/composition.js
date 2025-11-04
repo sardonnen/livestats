@@ -1,7 +1,8 @@
 /**
  * COMPOSITION.JS - Logique métier composition d'équipe
+ * Version: 3.0 - Schéma tactique dynamique
  * Architecture: BACKEND JavaScript pur
- * Gère: Drag & drop, Formations, Sauvegarde/Chargement
+ * Gère: Drag & drop, Formations DYNAMIQUES, Sauvegarde/Chargement
  */
 
 // ========================================
@@ -53,14 +54,61 @@ function showNotification(message, type = 'info') {
 // ========================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎮 CompositionPage avec Drag&Drop initialisé');
+    console.log('🎮 CompositionPage v3.0 avec Schéma Dynamique initialisé');
     
     updateTeamSelector();
     setupEventListeners();
     setupFormationButtons();
+    rebuildFieldLayout(); // Construire le terrain selon la formation par défaut
     setupDragAndDrop();
     checkForSavedComposition();
 });
+
+// ========================================
+// RECONSTRUCTION TERRAIN DYNAMIQUE
+// ========================================
+
+function rebuildFieldLayout() {
+    const formation = FORMATIONS[currentFormation];
+    console.log('🏗️ Reconstruction terrain pour formation:', currentFormation, formation);
+    
+    // Récupérer les lignes du terrain par ID
+    const attLine = document.getElementById('attLine');
+    const midLine = document.getElementById('midLine');
+    const defLine = document.getElementById('defLine');
+    
+    // Reconstruire ligne ATTAQUE
+    attLine.innerHTML = '';
+    for (let i = 0; i < formation.fw; i++) {
+        const zone = document.createElement('div');
+        zone.className = 'drop-zone';
+        zone.dataset.zone = `att-${i}`;
+        attLine.appendChild(zone);
+    }
+    
+    // Reconstruire ligne MILIEU
+    midLine.innerHTML = '';
+    for (let i = 0; i < formation.mf; i++) {
+        const zone = document.createElement('div');
+        zone.className = 'drop-zone';
+        zone.dataset.zone = `mid-${i}`;
+        midLine.appendChild(zone);
+    }
+    
+    // Reconstruire ligne DÉFENSE
+    defLine.innerHTML = '';
+    for (let i = 0; i < formation.df; i++) {
+        const zone = document.createElement('div');
+        zone.className = 'drop-zone';
+        zone.dataset.zone = `def-${i}`;
+        defLine.appendChild(zone);
+    }
+    
+    // Réinitialiser les event listeners drag&drop
+    setupDragAndDrop();
+    
+    console.log(`✅ Terrain reconstruit: ${formation.fw} ATT, ${formation.mf} MID, ${formation.df} DEF`);
+}
 
 // ========================================
 // SAUVEGARDE / CHARGEMENT
@@ -94,6 +142,8 @@ function loadSavedComposition() {
         document.querySelectorAll('.formation-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.formation === currentFormation);
         });
+        // Reconstruire le terrain selon la formation sauvegardée
+        rebuildFieldLayout();
     }
 
     // Charger les positions sur le terrain
@@ -168,6 +218,9 @@ function setupFormationButtons() {
             this.classList.add('active');
             currentFormation = this.dataset.formation;
             console.log('📐 Formation changée:', currentFormation);
+            
+            // NOUVEAU: Reconstruire le terrain selon la formation
+            rebuildFieldLayout();
             
             updateFieldDisplay();
             updateCompositionStatus();

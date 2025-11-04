@@ -1,25 +1,67 @@
 # 📄 SYNC STATUS - Football Stats Manager
 
-**Date dernière mise à jour:** 04 Nov 2025 - 19:00  
-**État général:** ✅ VERSION FINALE - Architecture Front/Back + Bugs corrigés  
+**Date dernière mise à jour:** 04 Nov 2025 - 19:30  
+**État général:** ✅ VERSION FINALE V3 - Schéma tactique dynamique  
 **Architecture:** Frontend/Backend séparé + Supabase + Design Mobile
 
 ---
 
-## 🎉 VERSION FINALE - ARCHITECTURE FRONT/BACK
+## 🎉 VERSION FINALE V3 - SCHÉMA TACTIQUE DYNAMIQUE
 
-### ✅ Séparation stricte Front/Back implémentée
+### ✅ Correction majeure: Disposition terrain adapté à la formation
 
-**FRONTEND (HTML pur):**
-- `pages/composition.html` - HTML uniquement, ZÉRO JavaScript inline
-- Seul le CSS inline pour styling spécifique
-- Tous les event handlers gérés par le backend
+**PROBLÈME RÉSOLU:**
+Le terrain affichait toujours la même disposition (3 att + 4 mid + 4 def) peu importe la formation choisie.
 
-**BACKEND (JavaScript pur):**
-- `js/composition.js` - Toute la logique métier
-- Drag & drop, formations, validation
-- Sauvegarde/chargement localStorage
-- Gestion des events
+**AVANT:**
+```
+Formation 4-3-3: [3 zones] [4 zones] [4 zones] ❌
+Formation 3-5-2: [3 zones] [4 zones] [4 zones] ❌ (pareil!)
+```
+
+**APRÈS:**
+```
+Formation 4-3-3: [3 zones ATT] [3 zones MID] [4 zones DEF] ✅
+Formation 3-5-2: [2 zones ATT] [5 zones MID] [3 zones DEF] ✅
+Formation 5-3-2: [2 zones ATT] [3 zones MID] [5 zones DEF] ✅
+```
+
+### 🛠️ Solution implémentée:
+
+**1. Fonction `rebuildFieldLayout()`:**
+```javascript
+function rebuildFieldLayout() {
+    const formation = FORMATIONS[currentFormation];
+    
+    // Reconstruire attaque
+    for (let i = 0; i < formation.fw; i++) {
+        // Créer zone att-0, att-1, att-2...
+    }
+    
+    // Reconstruire milieu
+    for (let i = 0; i < formation.mf; i++) {
+        // Créer zone mid-0, mid-1, mid-2...
+    }
+    
+    // Reconstruire défense
+    for (let i = 0; i < formation.df; i++) {
+        // Créer zone def-0, def-1, def-2...
+    }
+}
+```
+
+**2. HTML simplifié:**
+```html
+<!-- Zones créées dynamiquement par JavaScript -->
+<div class="field-line" id="attLine"></div>
+<div class="field-line" id="midLine"></div>
+<div class="field-line" id="defLine"></div>
+```
+
+**3. Appel automatique:**
+- ✅ Au chargement de la page (formation par défaut)
+- ✅ Lors du changement de formation
+- ✅ Lors du chargement d'une composition sauvegardée
 
 ---
 
