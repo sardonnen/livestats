@@ -4,7 +4,10 @@
 **Version actuelle:** v3.2 (Corrections majeures en cours)  
 **État général:** 🔧 EN CORRECTION - Bugs critiques identifiés  
 **Architecture:** Frontend/Backend séparé + Supabase + Design Mobile
-**Use case** un seul gisement de data commun à tous ceux qui se connecte sur l'application depuis n'importe quel mobil/pc. Il faut pouvoir retrouver les datas saisies par un autre user
+
+
+## Use case
+un seul gisement de data commun à tous ceux qui se connecte sur l'application depuis n'importe quel mobil/pc. Il faut pouvoir retrouver les datas saisies par un autre user lorsque nous nous connectons sur l'appli afin de faire une composition d'équipe, mise à jour d'effectif etc
 
 ---
 
