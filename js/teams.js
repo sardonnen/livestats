@@ -27,11 +27,10 @@ class TeamsPageManager {
         this.setupEventListeners();
         this.updateTeamsList();
         
-        // Auto-sync avec Supabase (DÉSACTIVÉE au démarrage pour éviter le gel)
-        // Commenté temporairement - À activer après diagnostic
-        // if (window.teamManager) {
-        //     window.teamManager.enableAutoSync(15000);
-        // }
+        // Auto-sync avec Supabase
+         if (window.teamManager) {
+             window.teamManager.enableAutoSync(5000);
+         }
         
         console.log('✅ TeamsPage prêt');
     }
