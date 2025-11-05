@@ -512,11 +512,26 @@
     </div>
 
     <!-- Scripts -->
+    <!-- 1. Supabase SDK (OBLIGATOIRE EN PREMIER) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- 2. Configuration Supabase -->
     <script src="../js/supabase-config.js"></script>
-    <script src="../js/data-manager.js"></script>
-    <script src="../js/sync-manager.js"></script>
+
+    <!-- 3. Backend Core  -->
+    <script src="../js/storage.js"></script>
+    <script src="../js/supabase-sync.js"></script>
+
+    <!-- 4. Backend Core USE CASE 3  -->
+    <script src="../js/offline-queue.js"></script>
+    <script src="../js/data-manager-v2.js"></script>
+    <script src="../js/sync-manager-v2.js"></script>
+
+    <!-- 5. Modules UI -->
+    <script src="../js/team-manager.js"></script>
     <script src="../js/notification.js"></script>
+
+    <!-- 6. Script de la page -->
     <script src="../js/live-match.js"></script>
 </body>
 </html>

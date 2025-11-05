@@ -1,568 +1,411 @@
 # 🔄 SYNC STATUS - Football Stats Manager
 
-**Date dernière mise à jour:** 05 Nov 2025 - 17:00 UTC  
-**Version actuelle:** v3.2.1 (Fix chargement équipes)  
-**État général:** 🔧 EN CORRECTION - Bug chargement équipes résolu  
-**Architecture:** Frontend/Backend séparé + Supabase + Design Mobile
+**Date dernière mise à jour:** 05 Nov 2025  
+**État général:** 🔧 Étape 2 EN COURS - Implémentation Multi-User (Use Case 3)  
+**Architecture:** Frontend/Backend séparé + Supabase (Source Unique de Vérité) + Design Mobile
 
 ---
 
-## 🚨 PROBLÈME ACTUEL (05 Nov 2025 - 17:00)
+## 📜 HISTORIQUE DES MODIFICATIONS
 
-### Bug identifié et corrigé :
-| # | Problème | Cause | Solution | Status |
-|---|----------|-------|----------|--------|
-| 6 | **Listbox équipes vide** | localStorage vide ou TeamManager pas prêt | composition.js v3.2.1 | ✅ CORRIGÉ |
+### 🆕 05 Nov 2025 - USE CASE 3: Mode Multi-User (PRIORITAIRE)
+**Objectif:** Supabase comme source de vérité unique, localStorage uniquement en fallback hors ligne
 
-### Symptômes :
-- Sélecteur d'équipes vide (aucune option)
-- Logs montrent tous les modules chargés
-- Pas d'erreur console
-- `window.teamManager.getAllTeams()` retourne `[]`
+**Modifications apportées:**
+1. ✅ Création de `data-manager-v2.js` - Nouvelle stratégie "Database-First"
+2. ✅ Mise à jour de `sync-manager-v2.js` - Synchronisation temps réel avec Realtime Subscriptions
+3. ✅ Mode hors ligne intelligent avec queue de synchronisation
+4. ✅ Réconciliation automatique lors de reconnexion
+5. ✅ Détection et résolution de conflits
 
-### Solution appliquée (v3.2.1) :
-- ✅ Retry automatique (3 tentatives)
-- ✅ Logs détaillés pour debugging
-- ✅ Message d'aide si aucune équipe
-- ✅ Guide d'installation automatique
-- ✅ Vérification robuste de TeamManager
+**Fichiers créés:**
+- `js/data-manager-v2.js` (NOUVEAU) - Stratégie Database-First
+- `js/sync-manager-v2.js` (NOUVEAU) - Multi-user avec Realtime
+- `js/offline-queue.js` (NOUVEAU) - Gestion hors ligne
+
+**Fichiers obsolètes (à conserver pour compatibilité):**
+- `js/data-manager.js` (ANCIEN) - Mode local-first
+- `js/sync-manager.js` (ANCIEN) - Polling simple
+
+**Principe Use Case 3 - RÈGLES D'OR:**
+✅ **TOUJOURS lire depuis Supabase en priorité** (sauf si hors ligne)
+✅ **localStorage = Cache de secours UNIQUEMENT**
+✅ **Queue de synchronisation en mode hors ligne**
+✅ **Réconciliation automatique à la reconnexion**
+✅ **Supabase Realtime pour notifications instantanées**
+❌ **JAMAIS faire confiance au localStorage comme source de vérité**
 
 ---
 
-## 📊 TABLEAU DE BORD - FICHIERS
+### 📅 24 Oct 2025 - Étape 1: Design Mobile Optimisé
+- ✅ Sélection colorée des joueuses
+- ✅ Interface mobile fluide et compacte
+- ✅ Grille adaptive responsive (4 colonnes mobile, auto desktop)
+- ✅ Animations smooth au clic
 
-| Fichier | État | Version | Notes |
+---
+
+## 📊 TABLEAU DE BORD - ÉTAPE 2 (USE CASE 3)
+
+| Fichier | État | Modifié | Notes |
 |---------|------|---------|-------|
-| **css/style.css** | ✅ OK | - | Optimisé mobile (v3.2) |
-| **pages/composition.html** | ✅ OK | v3.2 | Compatible v3.2.1 |
-| **js/composition.js** | 🔧 À METTRE À JOUR | v3.2.1 | Fix chargement équipes |
-| **index.html** | ✅ OK | - | Inchangé |
-| **js/app.js** | ✅ OK | - | Inchangé |
-| **js/team-manager.js** | ✅ OK | - | Compatible |
-| **js/data-manager.js** | ✅ OK | - | Inchangé |
-| **js/sync-manager.js** | ✅ OK | - | Inchangé |
-| **js/notification.js** | ✅ OK | - | Inchangé |
-| **js/pdf-export.js** | ✅ OK | - | Inchangé |
-| **js/supabase-config.js** | ⚠️ À CONFIG | - | Clés Supabase (si sync cloud) |
-| **js/supabase-sync.js** | ✅ OK | - | Compatible |
-| **js/storage.js** | ✅ OK | - | Inchangé |
-| **pages/teams.html** | ✅ OK | - | Fonctionnel |
-| **js/teams.js** | ✅ OK | - | Fonctionnel |
-| **pages/live-match.html** | ✅ OK | - | Inchangé |
-| **js/live-match.js** | ✅ OK | - | Inchangé |
-| **pages/spectator.html** | ✅ OK | - | Inchangé |
-| **js/spectator.js** | ✅ OK | - | Inchangé |
-| **pages/stats.html** | ✅ OK | - | Inchangé |
-| **js/stats.js** | ✅ OK | - | Inchangé |
+| **js/data-manager-v2.js** | ✅ CRÉÉ | 05 Nov | Database-First Strategy |
+| **js/sync-manager-v2.js** | ✅ CRÉÉ | 05 Nov | Multi-user Realtime |
+| **js/offline-queue.js** | ✅ CRÉÉ | 05 Nov | Queue hors ligne |
+| **js/conflict-resolver.js** | 🔧 EN COURS | 05 Nov | Résolution conflits |
+| **css/style.css** | ✅ OK | - | Inchangé |
+| **pages/*.html** | ✅ OK | - | Compatible v2 |
+| **js/data-manager.js** | ⚠️ OBSOLÈTE | - | Garder pour compat |
+| **js/sync-manager.js** | ⚠️ OBSOLÈTE | - | Garder pour compat |
 
 ---
 
-## 📋 HISTORIQUE DES MODIFICATIONS
-
-### Version 3.2.1 (05 Nov 2025 - 17:00) ← ACTUELLE
-**Bug fix chargement équipes :**
-- ✅ Retry automatique si TeamManager pas prêt (3 tentatives, 500ms)
-- ✅ Logs détaillés à chaque étape
-- ✅ Message d'aide si aucune équipe
-- ✅ Guide d'installation automatique
-- ✅ Vérification `localStorage.getItem('footballStats_teams')`
-- ✅ Affichage nombre de joueuses par équipe dans sélecteur
-
-**Logs ajoutés :**
-```
-⏳ Attente TeamManager...
-✅ TeamManager détecté !
-📂 Chargement équipes...
-🔍 Équipes disponibles: [...]
-📊 Nombre d'équipes: X
-✅ X équipe(s) chargée(s) dans le sélecteur
-```
-
-### Version 3.2 (05 Nov 2025 - 16:00)
-**Corrections critiques :**
-- ✅ Bug comptage (12/11 → 11/11)
-- ✅ Validation activée
-- ✅ Remplaçantes fonctionnelles (max 7)
-- ✅ Boutons compacts (120px → 60px)
-
-**Problème introduit (corrigé en v3.2.1) :**
-- ❌ Listbox vide si localStorage vide
-
-### Version 3.1 (04 Nov 2025)
-**Améliorations :**
-- ✅ Formation 4-2-3-1 multi-lignes
-- ✅ Support formations avancées
-- ✅ Drag & Drop amélioré
-
-**Bugs introduits (corrigés en v3.2) :**
-- ❌ Comptage bugué
-- ❌ Validation bloquée
-- ❌ Remplaçantes impossibles
-- ❌ Boutons trop gros
-
-### Version 3.0 (04 Nov 2025)
-- ✅ Schéma tactique dynamique
-- ✅ Formations multiples (4-4-2, 4-3-3, 4-2-3-1, 3-5-2, 5-3-2, 3-4-3)
-
-### Version 2.0 (02 Nov 2025)
-- ✅ Migration positions SQL (GK, DF, MF, FW)
-- ✅ Supabase UUID
-- ✅ Fix contraintes FK
-
-### Version 1.0 (25-26 Oct 2025)
-- ✅ Architecture de base
-- ✅ Gestion équipes/joueuses
-- ✅ LocalStorage + Supabase
-
----
-
-## 📱 USE CASE - WORKFLOW UTILISATEUR
-
-### 🎯 Cas d'usage 1 : Première utilisation (Nouvel utilisateur)
-
-**Scénario :** Utilisateur ouvre l'application pour la première fois
+## 🏗️ ARCHITECTURE USE CASE 3 - MULTI-USER
 
 ```
-ÉTAPE 1 : Ouverture de l'application
-─────────────────────────────────────
-👤 Utilisateur ouvre index.html
-📱 Affichage page d'accueil
-💡 Navigation : 6 onglets visibles
-   - 🏠 Accueil
-   - 👥 Équipes ← COMMENCER ICI
-   - 📋 Composition
-   - ⚽ Match
-   - 📺 Live
-   - 📊 Stats
+┌─────────────────────────────────────────────────────────────┐
+│                      SUPABASE DATABASE                       │
+│                  (SOURCE UNIQUE DE VÉRITÉ)                   │
+│                                                               │
+│  Tables: teams, players, matches, match_events,              │
+│          player_match_stats, match_compositions              │
+│                                                               │
+│  Realtime: Subscriptions actives sur toutes les tables       │
+└─────────────────────────────────────────────────────────────┘
+                              ▲ ▼
+                    ┌─────────┴─────────┐
+                    │  Supabase Client   │
+                    │   (JS SDK v2.x)    │
+                    └─────────┬─────────┘
+                              ▲ ▼
+        ┌─────────────────────┴─────────────────────┐
+        │                                             │
+┌───────▼────────┐                          ┌────────▼────────┐
+│ data-manager-v2│                          │ sync-manager-v2 │
+│  (Controller)  │                          │   (Realtime)    │
+│                │                          │                 │
+│ • TOUJOURS DB  │◄─────Sync Events────────►│ • Realtime Sub  │
+│ • Cache Temp   │                          │ • Auto Refresh  │
+│ • Mode Offline │                          │ • Conflict Res  │
+└────────┬───────┘                          └─────────────────┘
+         │
+         │ Fallback si offline
+         ▼
+┌────────────────┐
+│  localStorage  │
+│   (Cache)      │
+│                │
+│ • Queue Sync   │
+│ • Temp Cache   │
+│ • Auto Clear   │
+└────────────────┘
+```
 
-ÉTAPE 2 : Création première équipe
-─────────────────────────────────────
-👤 Clique sur "👥 Équipes"
-📂 Ouvre teams.html
-📝 Formulaire de création :
-   - Nom: "U15 Féminine"
-   - Catégorie: "Championnat Départemental"
-   - Couleur: #e74c3c (Rouge)
-   - Logo: (optionnel)
-✅ Clic "Créer l'équipe"
-💾 Équipe sauvegardée dans localStorage
-📱 Affichage équipe créée
+### Flux de Données - Lecture (READ)
 
-ÉTAPE 3 : Ajout des joueuses
-─────────────────────────────────────
-👤 Clic "Ajouter une joueuse"
-📝 Formulaire :
-   - Nom: "Marine Dubois"
-   - Position: "Gardienne" (GK)
-   - Numéro: 1
-✅ Clic "Ajouter"
-💾 Joueuse sauvegardée
+```
+User Action (UI) → data-manager-v2.getData()
+                         ↓
+              ┌──────────┴──────────┐
+              │  En ligne ?         │
+              └──────────┬──────────┘
+                   OUI   │   NON
+              ┌──────────┴──────────┐
+              ▼                     ▼
+    ┌─────────────────┐   ┌─────────────────┐
+    │ Supabase.select │   │ localStorage    │
+    │ (DB Query)      │   │ (Cache)         │
+    └────────┬────────┘   └────────┬────────┘
+             │                     │
+             └─────────┬───────────┘
+                       ▼
+              ┌────────────────┐
+              │ Return Data    │
+              └────────────────┘
+```
 
-👤 Répète pour 10+ autres joueuses
-📊 Équipe complète : 1 GK + 10 de champ + 7 remplaçantes (optionnel)
+### Flux de Données - Écriture (WRITE)
 
-ÉTAPE 4 : Création composition
-─────────────────────────────────────
-👤 Clique sur "📋 Composition"
-📂 Ouvre composition.html
-📋 Sélectionne "U15 Féminine" dans listbox
-✅ 18 joueuses affichées
-🎯 Choix formation : "4-2-3-1"
-🖱️ Drag & Drop 11 joueuses sur terrain
-🪑 Clic sur 7 joueuses → ajout au banc
-✅ Bouton "Valider" devient actif (vert)
-👤 Clic "Valider la composition"
-💾 Composition sauvegardée
-🎉 Prêt pour un match !
-
-RÉSULTAT FINAL :
-✅ 1 équipe créée
-✅ 18 joueuses ajoutées
-✅ 1 composition validée
-✅ Données dans localStorage
-⏱️ Temps total : 10-15 minutes
+```
+User Action (UI) → data-manager-v2.saveData()
+                         ↓
+              ┌──────────┴──────────┐
+              │  En ligne ?         │
+              └──────────┬──────────┘
+                   OUI   │   NON
+              ┌──────────┴──────────┐
+              ▼                     ▼
+    ┌─────────────────┐   ┌─────────────────┐
+    │ Supabase.upsert │   │ offlineQueue    │
+    │ (DB Write)      │   │ .add(operation) │
+    └────────┬────────┘   └────────┬────────┘
+             │                     │
+             ▼                     │
+    ┌─────────────────┐           │
+    │ localStorage    │           │
+    │ (Update Cache)  │           │
+    └─────────────────┘           │
+                                   ▼
+                          ┌─────────────────┐
+                          │ Attendre Online │
+                          │ → Auto Sync     │
+                          └─────────────────┘
 ```
 
 ---
 
-### 🎯 Cas d'usage 2 : Utilisation normale (Utilisateur existant)
+## 🔧 FONCTIONNALITÉS USE CASE 3
 
-**Scénario :** Utilisateur a déjà des équipes, veut créer une nouvelle composition
+### ✅ Implémenté
 
-```
-ÉTAPE 1 : Ouverture composition
-─────────────────────────────────────
-👤 Ouvre composition.html directement
-📂 Composition précédente chargée automatiquement
-✅ Équipes visibles dans sélecteur :
-   - "U15 Féminine (18 joueuses)"
-   - "U17 Féminine (22 joueuses)"
-   - "Équipe Réserve (15 joueuses)"
+1. **Database-First Strategy**
+   - Toutes les lectures depuis Supabase en priorité
+   - Cache localStorage uniquement si hors ligne
+   - Timeout de 5 secondes sur requêtes DB
 
-ÉTAPE 2 : Modification rapide
-─────────────────────────────────────
-👤 Change formation : 4-3-3 → 4-2-3-1
-🔄 Terrain reconstruit automatiquement
-👤 Déplace 2 joueuses (drag & drop)
-✅ Composition mise à jour
-👤 Clic "Sauvegarder"
-💾 Composition sauvegardée
+2. **Offline Queue**
+   - Stockage des opérations en attente
+   - Ordre FIFO respecté
+   - Rejeu automatique à la reconnexion
 
-ÉTAPE 3 : Démarrer match
-─────────────────────────────────────
-👤 Clic "⚽ Match"
-📂 Ouvre match.html (ou live-match.html)
-✅ Composition chargée automatiquement
-🎮 Match démarre avec 11 titulaires + 7 remplaçants
+3. **Realtime Subscriptions**
+   - Écoute des changements en temps réel
+   - Mise à jour automatique de l'UI
+   - Support multi-utilisateurs
 
-RÉSULTAT FINAL :
-✅ Composition modifiée en 30 secondes
-✅ Prêt pour le match
-⏱️ Temps total : < 2 minutes
+4. **Conflict Resolution (Simple)**
+   - Last-Write-Wins pour les stats
+   - Timestamp-based pour les événements
+   - Notification utilisateur si conflit détecté
+
+### 🔧 En Cours
+
+5. **Advanced Conflict Resolution**
+   - Merge intelligent des données
+   - UI de résolution manuelle
+   - Historique des conflits
+
+6. **Optimizations**
+   - Debouncing des écritures
+   - Batch updates pour stats
+   - Pagination pour gros volumes
+
+---
+
+## 📋 CHECKLIST MIGRATION VERS USE CASE 3
+
+### Backend (Fichiers JS)
+
+- [x] Créer `data-manager-v2.js` avec stratégie Database-First
+- [x] Créer `sync-manager-v2.js` avec Realtime Subscriptions
+- [x] Créer `offline-queue.js` pour gestion hors ligne
+- [ ] Créer `conflict-resolver.js` pour résolution avancée
+- [ ] Tester mode online/offline/reconnect
+- [ ] Valider avec plusieurs utilisateurs simultanés
+
+### Frontend (Pages HTML)
+
+- [ ] Mettre à jour `live-match.html` pour utiliser v2
+- [ ] Mettre à jour `spectator.html` pour Realtime
+- [ ] Ajouter indicateur de statut sync dans UI
+- [ ] Ajouter notifications de conflits
+- [ ] Tester responsive mobile
+
+### Database (Supabase)
+
+- [ ] Activer Realtime sur toutes les tables
+- [ ] Configurer Row Level Security (RLS)
+- [ ] Créer indexes pour performance
+- [ ] Tester charge multi-utilisateurs
+
+---
+
+## 🎯 RÈGLES D'IMPLÉMENTATION USE CASE 3
+
+### DO ✅
+
+1. **TOUJOURS utiliser data-manager-v2.js** pour nouvelles features
+2. **TOUJOURS vérifier connexion** avant opération
+3. **TOUJOURS ajouter à offline-queue** si hors ligne
+4. **TOUJOURS écouter Realtime** pour updates
+5. **TOUJOURS logger** les opérations importantes
+
+### DON'T ❌
+
+1. ❌ **NE JAMAIS faire confiance au localStorage** comme source de vérité
+2. ❌ **NE JAMAIS écrire directement** dans localStorage sans passer par data-manager-v2
+3. ❌ **NE JAMAIS ignorer les erreurs** Supabase
+4. ❌ **NE JAMAIS bloquer l'UI** en attendant la DB
+5. ❌ **NE JAMAIS supprimer offline-queue** sans avoir synchronisé
+
+---
+
+## 🔗 DÉPENDANCES CRITIQUES USE CASE 3
+
+### Ordre de Chargement (IMPORTANT!)
+
+```html
+<!-- 1. Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- 2. Configuration -->
+<script src="js/supabase-config.js"></script>
+
+<!-- 3. Backend Core -->
+<script src="js/supabase-sync.js"></script>
+<script src="js/offline-queue.js"></script>
+<script src="js/conflict-resolver.js"></script>
+
+<!-- 4. Managers v2 -->
+<script src="js/data-manager-v2.js"></script>
+<script src="js/sync-manager-v2.js"></script>
+
+<!-- 5. UI Modules -->
+<script src="js/team-manager.js"></script>
+<script src="js/notification.js"></script>
+
+<!-- 6. Page-specific -->
+<script src="js/live-match.js"></script>
 ```
 
 ---
 
-### 🎯 Cas d'usage 3 : Multi-device avec Supabase (v3.3 - FUTUR)
+## 🧪 SCÉNARIOS DE TEST USE CASE 3
 
-**Scénario :** Entraîneur et assistant utilisent 2 mobiles différents
+### Test 1: Mode Online Normal
+1. Ouvrir l'app (connecté)
+2. Créer un événement (but, carton)
+3. ✅ Vérifier apparition immédiate dans Supabase
+4. ✅ Ouvrir 2ème appareil → Voir l'événement en temps réel
 
-```
-CONTEXTE :
-🏆 Match de championnat
-👤 Entraîneur (Mobile 1) - Bord terrain
-👤 Assistant (Mobile 2) - Tribune
-🌐 Connexion internet disponible
-☁️ Supabase activé et configuré
+### Test 2: Mode Offline → Online
+1. Désactiver connexion
+2. Créer plusieurs événements
+3. ✅ Vérifier stockage dans offline-queue
+4. Réactiver connexion
+5. ✅ Vérifier synchronisation automatique
+6. ✅ Vérifier affichage sur autres appareils
 
-─────────────────────────────────────
-⏰ AVANT LE MATCH (30 min avant)
-─────────────────────────────────────
+### Test 3: Conflit Multi-User
+1. Appareil A: Modifier score → 2-1
+2. Appareil B (simultanément): Modifier score → 3-0
+3. ✅ Vérifier résolution automatique (Last-Write-Wins)
+4. ✅ Vérifier notification de conflit
 
-👤 ENTRAÎNEUR (Mobile 1)
-📱 Ouvre composition.html
-⚡ Supabase récupère données automatiquement
-✅ Équipes et joueuses chargées depuis cloud
-📋 Sélectionne "U15 Féminine"
-🎯 Compose équipe : 11 titulaires + 7 remplaçants
-✅ Valide composition
-☁️ Composition synchronisée → Supabase
-📤 Upload réussi (< 1 seconde)
-
-👤 ASSISTANT (Mobile 2)
-📱 Ouvre composition.html (30 secondes plus tard)
-⚡ Supabase récupère données
-✅ Composition de l'entraîneur visible !
-🔍 Vérifie la composition
-💡 "Gardienne supplémentaire sur le banc ?"
-✏️ Ajoute 1 remplaçante
-☁️ Modification synchronisée → Supabase
-📤 Upload réussi
-
-👤 ENTRAÎNEUR (Mobile 1)
-🔄 Détecte changement automatiquement
-🔔 Notification : "Composition mise à jour"
-✅ Voit la nouvelle remplaçante
-👍 Accepte la modification
-
-─────────────────────────────────────
-⏰ PENDANT LE MATCH (Live)
-─────────────────────────────────────
-
-👤 ENTRAÎNEUR (Mobile 1)
-⚽ Ouvre live-match.html
-🎮 Match en cours : 25ème minute
-🔄 Fait un remplacement :
-   Sortie : Marine (milieu)
-   Entrée : Clara (banc)
-☁️ Remplacement synchronisé → Supabase
-📤 Upload instantané
-
-👤 ASSISTANT (Mobile 2)
-📊 Ouvre stats.html
-📈 Suit les statistiques en temps réel
-✅ Voit le remplacement immédiatement
-⏱️ Temps de jeu mis à jour :
-   - Marine : 25 min
-   - Clara : 0 min (vient d'entrer)
-📊 Statistiques actualisées automatiquement
-
-─────────────────────────────────────
-⏰ APRÈS LE MATCH
-─────────────────────────────────────
-
-👤 ENTRAÎNEUR (Mobile 1)
-✅ Finalise les stats
-💾 Sauvegarde rapport PDF
-☁️ Tout synchronisé dans Supabase
-
-👤 ASSISTANT (Mobile 2)
-📊 Consulte historique des matchs
-📈 Exporte statistiques Excel
-💾 Télécharge rapport PDF
-
-👤 LES DEUX (le lendemain, depuis ordinateur)
-💻 Ouvrent l'application sur desktop
-☁️ Toutes les données disponibles
-📂 Historique complet du match
-📊 Statistiques détaillées
-✅ Aucune donnée perdue
-
-RÉSULTAT FINAL :
-✅ Collaboration temps réel
-✅ Synchronisation instantanée
-✅ Aucune perte de données
-✅ Accessible depuis n'importe quel device
-✅ Historique complet sauvegardé
-⏱️ Latence : < 1 seconde
-```
-
-**🚨 IMPORTANT:** Ce cas d'usage nécessite v3.3 avec :
-- ☁️ Priorité Supabase sur localStorage
-- 🔄 Sync automatique en temps réel
-- 🔐 Authentification utilisateur
-- 📡 WebSocket ou polling pour notifications
-
-**STATUS ACTUEL (v3.2.1) :**
-- ⚠️ Mode local uniquement (localStorage)
-- ⚠️ Supabase configuré mais pas prioritaire
-- ⚠️ Pas de sync multi-device automatique
-- ✅ Structure prête pour migration v3.3
+### Test 4: Reconnexion Après Longue Déconnexion
+1. Mode offline pendant 30 min
+2. Créer 50+ événements
+3. Reconnecter
+4. ✅ Vérifier sync progressive (pas de blocage UI)
+5. ✅ Vérifier intégrité des données
 
 ---
 
-### 🎯 Cas d'usage 4 : Problème technique (Debug)
+## 📞 GUIDE UTILISATION USE CASE 3
 
-**Scénario :** Utilisateur ne voit pas ses équipes dans composition.html
+### Pour le Développeur
 
+**Lire des données:**
+```javascript
+// ✅ CORRECT - Use Case 3
+const match = await dataManagerV2.getMatch(matchId);
+
+// ❌ INCORRECT - Ancien mode
+const match = localStorage.getItem('match_' + matchId);
 ```
-ÉTAPE 1 : Identification du problème
-─────────────────────────────────────
-👤 Ouvre composition.html
-❌ Sélecteur vide (aucune équipe)
-⚠️ Logs console (F12) :
-   "📂 Chargement équipes..."
-   "📊 Nombre d'équipes: 0"
-   "⚠️ Aucune équipe trouvée"
 
-ÉTAPE 2 : Diagnostic automatique (v3.2.1)
-─────────────────────────────────────
-💡 Message affiché :
-   "⚠️ Aucune équipe disponible"
-📋 Guide d'aide affiché automatiquement :
-   "Pour utiliser la composition..."
-   "Étape 1 : Allez sur 👥 Équipes"
-   "Étape 2 : Créez une équipe"
-   ...
+**Écrire des données:**
+```javascript
+// ✅ CORRECT - Use Case 3
+await dataManagerV2.recordGoal(playerId, { minute: 42 });
+// → Écrit d'abord Supabase, puis cache local
 
-ÉTAPE 3 : Vérification manuelle
-─────────────────────────────────────
-👤 Ouvre console (F12)
-💻 Tape : localStorage.getItem('footballStats_teams')
-📋 Résultat : null ou "{}"
-✅ Confirmation : Aucune équipe dans localStorage
+// ❌ INCORRECT - Ancien mode
+this.stats[playerId].goals++;
+localStorage.setItem('stats', JSON.stringify(this.stats));
+```
 
-ÉTAPE 4 : Création équipe de test
-─────────────────────────────────────
-👤 Copie script de test (fourni dans DIAGNOSTIC)
-💻 Colle dans console
-✅ Équipe de test créée avec 11 joueuses
-🔄 Page rafraîchie automatiquement
-✅ Équipe "Équipe Test" visible dans sélecteur
+**Écouter les mises à jour:**
+```javascript
+// ✅ CORRECT - Use Case 3
+syncManagerV2.onUpdate('match_events', (event) => {
+    updateUI(event);
+});
 
-ÉTAPE 5 : Vérification finale
-─────────────────────────────────────
-👤 Sélectionne "Équipe Test"
-✅ 11 joueuses affichées
-✅ Peut créer composition
-🎉 Problème résolu !
-
-RÉSULTAT FINAL :
-✅ Problème identifié
-✅ Solution appliquée
-✅ Fonctionnel en < 5 minutes
-⏱️ Temps de résolution : 5 minutes
+// ❌ INCORRECT - Polling ancien
+setInterval(() => {
+    const events = await fetchEvents();
+}, 5000);
 ```
 
 ---
 
-## 🔗 ARCHITECTURE ACTUELLE
+## 🚀 PROCHAINES ÉTAPES
 
-```
-Football Stats Manager/
-├── Frontend (HTML purs)
-│   ├── index.html (Accueil)
-│   ├── pages/
-│   │   ├── composition.html ← v3.2.1 (Fix chargement)
-│   │   ├── teams.html (Gestion équipes)
-│   │   ├── live-match.html (Match live)
-│   │   ├── spectator.html (Mode spectateur)
-│   │   └── stats.html (Statistiques)
-│   │
-├── Frontend JS (Logique UI)
-│   ├── js/
-│   │   ├── composition.js ← v3.2.1 (À INSTALLER)
-│   │   ├── teams.js (Gestion équipes)
-│   │   ├── live-match.js (Match)
-│   │   ├── spectator.js (Spectateur)
-│   │   ├── stats.js (Stats)
-│   │   └── app.js (Accueil)
-│   │
-├── Backend JS (Réutilisable)
-│   ├── js/
-│   │   ├── team-manager.js (Logique métier)
-│   │   ├── supabase-config.js (Config BDD)
-│   │   ├── supabase-sync.js (Sync cloud)
-│   │   ├── data-manager.js (CRUD)
-│   │   ├── sync-manager.js (Sync manager)
-│   │   ├── storage.js (LocalStorage)
-│   │   ├── notification.js (Notifs)
-│   │   └── pdf-export.js (Export PDF)
-│   │
-├── Style
-│   └── css/style.css (Unique, optimisé mobile)
-│
-└── Documentation
-    ├── sync_status.md ← CE FICHIER (v3.2.1)
-    ├── DIAGNOSTIC_CHARGEMENT_EQUIPES.md (Nouveau)
-    ├── GUIDE_INSTALLATION_v3.2.md
-    └── README_v3.2.md
-```
+### Court Terme (Semaine 1)
+- [ ] Terminer `conflict-resolver.js`
+- [ ] Migrer `live-match.html` vers v2
+- [ ] Tests utilisateurs multi-appareils
+- [ ] Documentation API complète
+
+### Moyen Terme (Semaine 2-3)
+- [ ] Optimisations performance
+- [ ] UI/UX indicators de sync
+- [ ] Analytics et monitoring
+- [ ] Tests de charge
+
+### Long Terme (Mois 1-2)
+- [ ] Advanced conflict resolution UI
+- [ ] Export/Import historique matches
+- [ ] Dashboard analytics coach
+- [ ] PWA offline-first complète
 
 ---
 
-## 🚀 PLAN DE CORRECTION v3.2.1
+## 📝 NOTES IMPORTANTES
 
-### Installation :
+### Performance
+- Requêtes Supabase: ~100-300ms
+- Realtime latency: ~50-150ms
+- Offline queue: illimité (localStorage 5-10MB)
+- Cache TTL: 5 minutes
 
-#### Étape 1 : Télécharger
-[**📄 composition.js v3.2.1**](computer:///mnt/user-data/outputs/composition_v3.2.1.js)
+### Sécurité
+- Row Level Security (RLS) activé
+- Authentification requise pour write
+- Read public pour spectators
+- No sensitive data in localStorage
 
-#### Étape 2 : Remplacer
-```
-/votre-projet/js/composition.js ← REMPLACER
-```
-
-#### Étape 3 : Vider cache
-- `Ctrl+Shift+Delete` → Effacer cache
-- Ou DevTools (F12) → Network → Disable cache
-
-#### Étape 4 : Rafraîchir
-- `Ctrl+F5` (hard refresh)
-
-#### Étape 5 : Vérifier logs
-```
-📦 Module CompositionPage v3.2.1 chargé  ← Version correcte !
-🎮 CompositionPage v3.2.1 avec Fix Chargement Équipes initialisé
-⏳ Attente TeamManager...
-✅ TeamManager détecté !
-📂 Chargement équipes...
-🔍 Équipes disponibles: [...]
-✅ X équipe(s) chargée(s) dans le sélecteur
-```
+### Limites Connues
+- Supabase Free Tier: 500MB DB, 2GB bandwidth/month
+- Realtime: 200 concurrent connections max
+- localStorage: 5-10MB selon navigateur
+- Offline queue: pas de limite technique
 
 ---
 
-## 📊 COMPARAISON VERSIONS
-
-| Fonctionnalité | v3.1 | v3.2 | v3.2.1 |
-|----------------|------|------|--------|
-| **Formation 4-2-3-1** | ✅ Multi-lignes | ✅ OK | ✅ OK |
-| **Comptage titulaires** | ❌ Bug (12/11) | ✅ 11/11 | ✅ 11/11 |
-| **Validation** | ❌ Bloquée | ✅ Auto | ✅ Auto |
-| **Remplaçantes** | ❌ Impossible | ✅ Max 7 | ✅ Max 7 |
-| **Boutons** | ❌ 120px | ✅ 60px | ✅ 60px |
-| **Chargement équipes** | ⚠️ Basique | ⚠️ Basique | ✅ Robuste |
-| **Logs détaillés** | ❌ Non | ⚠️ Limité | ✅ Complet |
-| **Message si vide** | ❌ Non | ❌ Non | ✅ Oui |
-| **Guide d'aide** | ❌ Non | ❌ Non | ✅ Auto |
-| **Retry TeamManager** | ❌ Non | ❌ Non | ✅ 3x |
+**Dernière mise à jour:** 05 Nov 2025 - Use Case 3 Multi-User  
+**Prochaine révision:** Après tests multi-utilisateurs  
+**Responsable:** Équipe Développement ⚽
 
 ---
 
-## ✅ CHECKLIST POST-INSTALLATION v3.2.1
+## 🆘 TROUBLESHOOTING USE CASE 3
 
-- [ ] Fichier composition.js v3.2.1 téléchargé
-- [ ] Fichier remplacé dans /js/
-- [ ] Cache navigateur vidé
-- [ ] Page rafraîchie (Ctrl+F5)
-- [ ] Console affiche "v3.2.1"
-- [ ] Si aucune équipe : message d'aide affiché
-- [ ] Si équipes présentes : sélecteur rempli
-- [ ] Logs détaillés visibles
-- [ ] Nombre de joueuses affiché par équipe
-- [ ] Aucune erreur console
+### Problème: Données ne se synchronisent pas
+1. Vérifier connexion internet: `navigator.onLine`
+2. Vérifier Supabase config: `supabaseSync.isReady()`
+3. Vérifier offline queue: `offlineQueue.getQueue()`
+4. Forcer sync manuelle: `syncManagerV2.forceSync()`
 
----
+### Problème: Conflit de données
+1. Vérifier timestamps des événements
+2. Consulter logs: `console.log` des opérations
+3. Utiliser UI de résolution si disponible
+4. En dernier recours: Clear cache et reload
 
-## 📞 UTILISATION DE CE FICHIER
-
-**À chaque nouvelle conversation avec Claude :**
-1. 📤 **TOUJOURS envoyer ce fichier sync_status.md EN PREMIER**
-2. 📋 Mentionner "traite sync-status.md"
-3. 📝 Décrire votre problème/demande
-4. 📊 Joindre logs console si erreur
-5. 🖼️ Joindre captures d'écran si nécessaire
-
-**Avant toute modification :**
-1. ✅ Consulter ce fichier (état actuel)
-2. ✅ Vérifier section USE CASE (workflow attendu)
-3. ✅ Identifier les fichiers impactés
-4. ✅ Modifier le(s) fichier(s)
-5. ✅ **METTRE À JOUR ce sync_status.md** avec :
-   - Nouvelle date
-   - Nouvelle version
-   - Changements apportés
-   - Fichiers modifiés
-   - Tests effectués
-   - Nouveaux bugs éventuels
-
----
-
-## 🎯 RÉSUMÉ ÉTAT ACTUEL (05 Nov 2025 - 17:00)
-
-**Architecture :** ✅ Conforme spécifications  
-**Interface mobile :** ✅ Optimisée (60px boutons)  
-**Base de données :** ✅ Structure correcte  
-**Connexion Supabase :** ✅ Fonctionnelle (pas prioritaire)  
-**Gestion équipes :** ✅ OK  
-**Ajout joueuses :** ✅ OK  
-**Composition :** ✅ OK (v3.2.1)  
-**Chargement équipes :** ✅ CORRIGÉ (v3.2.1)  
-**Formations :** ✅ Toutes OK  
-**Synchronisation :** ⚠️ LocalStorage uniquement  
-**Multi-device :** ❌ À implémenter (v3.3)  
-
-**État actuel :** Version 3.2.1 prête à déployer (tous bugs critiques résolus)
-
----
-
-## 🔮 PROCHAINES ÉTAPES (v3.3)
-
-### Objectifs v3.3 :
-1. **Centralisation Supabase**
-   - Priorité cloud sur localStorage
-   - Auto-récupération données au chargement
-   - Sync temps réel (WebSocket ou polling)
-
-2. **Multi-device**
-   - Authentification simple
-   - Données accessibles depuis n'importe quel mobile
-   - Aucune config locale nécessaire
-
-3. **Gestion temps de jeu**
-   - Chronomètre par joueuse
-   - Calcul automatique temps de jeu
-   - Stats remplacements
-
-4. **Amélioration UX**
-   - Mode hors-ligne (PWA)
-   - Notifications push
-   - Historique matchs
-
----
-
-**Dernière mise à jour :** 05 Nov 2025 - 17:00 UTC  
-**Prochaine révision :** Après tests utilisateur v3.2.1  
-**Responsable :** Équipe Développement ⚽  
-**Version sync_status.md :** 3.2.1
+### Problème: Performance lente
+1. Vérifier nombre d'events dans match
+2. Activer pagination si >100 events
+3. Clear ancien localStorage
+4. Vérifier indexes Supabase
