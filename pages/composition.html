@@ -2,94 +2,55 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>📋 Composition - Football Stats Manager</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
-    
     <style>
-        /* Styles spécifiques pour le terrain */
-        #footballField {
-            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
-            min-height: 500px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            gap: 12px;
-        }
-        
-        .field-label {
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        .field-line {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .zones-container {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            width: 100%;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        
-        .drop-zone {
-            min-width: 60px;
-            min-height: 60px;
-            background: rgba(255,255,255,0.1);
-            border: 2px dashed rgba(255,255,255,0.3);
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.75rem;
-            color: rgba(255,255,255,0.5);
-        }
-        
-        .drop-zone:hover {
-            background: rgba(255,255,255,0.2);
-            border-color: rgba(255,255,255,0.5);
-        }
-        
+        /* ✅ FIX BUG 3: Styles optimisés pour mobile */
         .player-card {
-            background: white;
+            min-height: 60px !important; /* Réduit de 120px à 60px */
+            padding: 0.5rem !important; /* Réduit de 15px à 8px */
+            font-size: 0.85em !important; /* Police plus compacte */
+        }
+
+        .drop-zone {
+            min-height: 50px;
+            transition: all 0.2s ease;
+        }
+
+        .drop-zone:hover {
+            background: rgba(52,152,219,0.2) !important;
+            border-color: #3498db !important;
+        }
+
+        #fieldGrid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
             padding: 1rem;
             border-radius: 8px;
-            text-align: center;
-            cursor: grab;
-            transition: all 0.3s ease;
-            border: 2px solid #ecf0f1;
+            aspect-ratio: 1 / 1.4;
         }
-        
-        .player-card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+
+        #playersList, #benchList {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.5rem;
         }
-        
-        .player-card:active {
-            cursor: grabbing;
-        }
-        
-        .line-label {
-            font-size: 0.7rem;
-            color: rgba(255,255,255,0.6);
-            text-align: center;
-            margin-bottom: 4px;
+
+        @media (max-width: 480px) {
+            .player-card {
+                min-height: 50px !important;
+                padding: 0.4rem !important;
+                font-size: 0.75em !important;
+            }
+
+            #playersList, #benchList {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                gap: 0.4rem;
+            }
         }
     </style>
 </head>
@@ -97,7 +58,7 @@
     <div class="container">
         <header class="header">
             <h1>📋 Composition d'Équipe</h1>
-            <p>Formations tactiques avec multi-lignes</p>
+            <p>Sélectionnez 11 titulaires + 7 remplaçantes max</p>
         </header>
 
         <!-- Navigation -->
@@ -111,7 +72,7 @@
         </nav>
 
         <main class="main-content">
-            <!-- Sélection de l'équipe -->
+            <!-- Sélection équipe -->
             <section class="team-card">
                 <h2>🎯 Sélectionner une Équipe</h2>
                 <div class="form-group">
@@ -121,7 +82,7 @@
                     </select>
                 </div>
                 <p style="color: #7f8c8d; font-size: 0.9rem; margin-top: 1rem;">
-                    💡 Si vous n'avez pas d'équipe, allez d'abord à la page 👥 Équipes pour en créer une
+                    💡 Si vous n'avez pas d'équipe, allez d'abord à la page 👥 Équipes
                 </p>
             </section>
 
@@ -130,39 +91,66 @@
                 <h2>⚽ Composition : <span id="selectedTeamDisplay"></span></h2>
                 
                 <!-- Sélection formation -->
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label for="formationSelector">Formation tactique</label>
                     <select id="formationSelector">
                         <option value="4-4-2">4-4-2 (Classique)</option>
                         <option value="4-3-3">4-3-3 (Offensive)</option>
-                        <option value="4-2-3-1">4-2-3-1 (Milieux doubles lignes)</option>
-                        <option value="3-5-2">3-5-2 (Milieu renforcé)</option>
+                        <option value="4-2-3-1" selected>4-2-3-1 (Équilibrée)</option>
+                        <option value="3-5-2">3-5-2 (Contrôle milieu)</option>
                         <option value="5-3-2">5-3-2 (Défensive)</option>
-                        <option value="3-4-3">3-4-3 (Très offensive)</option>
+                        <option value="3-4-3">3-4-3 (Ultra-offensive)</option>
                     </select>
                 </div>
-                
+
                 <!-- Statut composition -->
-                <div id="compositionStatus" style="background: #ecf0f1; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                    <p id="statusText" style="margin: 0; font-weight: bold;">Équipe incomplète</p>
+                <div style="background: #ecf0f1; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <p id="compositionStatus" style="margin: 0; font-weight: bold; color: #7f8c8d;">
+                        ⏳ Placez 11 joueuses sur le terrain
+                    </p>
                 </div>
 
-                <!-- Visualisation terrain -->
-                <div id="footballField">
-                    <!-- Le terrain sera construit dynamiquement par le JS -->
+                <!-- Terrain -->
+                <div style="margin-bottom: 1.5rem;">
+                    <h3>⚽ Terrain (Drag & Drop)</h3>
+                    <div id="fieldGrid"></div>
                 </div>
 
-                <!-- Sélection des joueuses -->
-                <h3>👥 Joueuses disponibles (glissez-déposez sur le terrain)</h3>
-                <div id="playersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-                    <p style="grid-column: 1/-1; text-align: center; color: #bdc3c7;">Sélectionnez une équipe d'abord</p>
+                <!-- Joueuses disponibles -->
+                <div style="margin-bottom: 1.5rem;">
+                    <h3>👥 Joueuses Disponibles (Cliquez ou Glissez)</h3>
+                    <p style="font-size: 0.85rem; color: #7f8c8d; margin-bottom: 0.5rem;">
+                        💡 Glissez-déposez sur le terrain ou cliquez pour ajouter au banc
+                    </p>
+                    <div id="playersList"></div>
+                </div>
+
+                <!-- Banc remplaçantes -->
+                <div style="margin-bottom: 1.5rem;">
+                    <h3>🪑 Remplaçantes (Max 7)</h3>
+                    <p style="font-size: 0.85rem; color: #7f8c8d; margin-bottom: 0.5rem;">
+                        💡 Cliquez sur une joueuse ci-dessus pour l'ajouter au banc
+                    </p>
+                    <div id="benchList"></div>
                 </div>
 
                 <!-- Actions -->
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap; padding-top: 1.5rem; border-top: 1px solid #ecf0f1;">
                     <button class="btn btn-success" id="validateBtn" disabled>✅ Valider la Composition</button>
-                    <button class="btn btn-warning" id="clearBtn">🔄 Réinitialiser</button>
-                    <button class="btn btn-secondary" onclick="document.getElementById('compositionSection').style.display='none'">✖️ Fermer</button>
+                    <button class="btn btn-primary" id="saveBtn">💾 Sauvegarder</button>
+                    <button class="btn btn-warning" id="resetBtn">🔄 Réinitialiser</button>
+                </div>
+
+                <!-- Aide -->
+                <div style="background: #e8f5e9; padding: 1rem; border-radius: 8px; margin-top: 1.5rem; border-left: 4px solid #2ecc71;">
+                    <h4 style="margin-top: 0; color: #27ae60;">💡 Comment utiliser :</h4>
+                    <ul style="margin: 0; padding-left: 1.5rem; color: #555;">
+                        <li><strong>Glisser-déposer :</strong> Faites glisser une joueuse sur une zone du terrain</li>
+                        <li><strong>Clic banc :</strong> Cliquez sur une joueuse disponible pour l'ajouter au banc</li>
+                        <li><strong>Retirer :</strong> Cliquez sur une joueuse sur le terrain pour la retirer</li>
+                        <li><strong>Formation :</strong> Changez la formation pour réorganiser le terrain</li>
+                        <li><strong>Validation :</strong> Activée automatiquement quand 11 joueuses + 1 GK</li>
+                    </ul>
                 </div>
             </section>
         </main>
