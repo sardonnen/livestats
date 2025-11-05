@@ -1,644 +1,360 @@
-/**
- * COMPOSITION.JS v3.2 - CORRECTIONS MAJEURES
- * Date: 05 Nov 2025
- * Corrections:
- * - Bug comptage (12/11 → 11/11)
- * - Validation composition activée
- * - Ajout remplaçantes fonctionnel
- * - Boutons plus compacts (60px au lieu de 120px)
- * - Centralisation données Supabase
- */
+// ===== GESTION DE LA COMPOSITION - composition.html =====
+// Frontend pour la page composition.html
+// Utilise team-manager.js pour charger les équipes
 
-// ========================================
-// VARIABLES GLOBALES
-// ========================================
-
-let selectedTeamId = null;
-let fieldComposition = {}; // { zone: [playerId, ...] }
-let benchPlayers = []; // Liste remplaçantes (max 7)
-let currentFormation = '4-2-3-1';
-let availablePlayers = [];
-let draggedPlayerId = null;
-
-// Formations disponibles avec lignes détaillées
-const FORMATIONS = {
-    '4-4-2': {
-        name: '4-4-2',
-        gk: 1,
-        lines: [
-            { type: 'att', zones: 2, label: 'Attaquantes' },
-            { type: 'mid', zones: 4, label: 'Milieux' },
-            { type: 'def', zones: 4, label: 'Défenseuses' }
-        ]
-    },
-    '4-3-3': {
-        name: '4-3-3',
-        gk: 1,
-        lines: [
-            { type: 'att', zones: 3, label: 'Attaquantes' },
-            { type: 'mid', zones: 3, label: 'Milieux' },
-            { type: 'def', zones: 4, label: 'Défenseuses' }
-        ]
-    },
-    '4-2-3-1': {
-        name: '4-2-3-1',
-        gk: 1,
-        lines: [
-            { type: 'att', zones: 1, label: 'Attaquante' },
-            { type: 'mid', zones: 3, label: 'Milieux offensifs', subtype: 'offensive' },
-            { type: 'mid', zones: 2, label: 'Milieux défensifs', subtype: 'defensive' },
-            { type: 'def', zones: 4, label: 'Défenseuses' }
-        ]
-    },
-    '3-5-2': {
-        name: '3-5-2',
-        gk: 1,
-        lines: [
-            { type: 'att', zones: 2, label: 'Attaquantes' },
-            { type: 'mid', zones: 5, label: 'Milieux' },
-            { type: 'def', zones: 3, label: 'Défenseuses' }
-        ]
-    },
-    '5-3-2': {
-        name: '5-3-2',
-        gk: 1,
-        lines: [
-            { type: 'att', zones: 2, label: 'Attaquantes' },
-            { type: 'mid', zones: 3, label: 'Milieux' },
-            { type: 'def', zones: 5, label: 'Défenseuses' }
-        ]
-    },
-    '3-4-3': {
-        name: '3-4-3',
-        gk: 1,
-        lines: [
-            { type: 'att', zones: 3, label: 'Attaquantes' },
-            { type: 'mid', zones: 4, label: 'Milieux' },
-            { type: 'def', zones: 3, label: 'Défenseuses' }
-        ]
-    }
-};
-
-// Mapping positions SQL vers affichage français
-const POSITION_MAP = {
-    'GK': { label: 'Gardienne', icon: '🥅', class: 'gk' },
-    'DF': { label: 'Défenseuse', icon: '🛡️', class: 'def' },
-    'MF': { label: 'Milieu', icon: '⚙️', class: 'mid' },
-    'FW': { label: 'Attaquante', icon: '⚽', class: 'fw' }
-};
-
-// ========================================
-// CLASS COMPOSITION PAGE v3.2
-// ========================================
-
-class CompositionPage {
+class CompositionManager {
     constructor() {
-        console.log('🎮 CompositionPage v3.2 avec Corrections Majeures initialisé');
+        this.selectedTeamId = null;
+        this.selectedPlayers = [];
         this.init();
     }
 
+    /**
+     * Initialisation
+     */
     init() {
+        console.log('📋 Initialisation Composition Manager');
+        
+        // Attendre que team-manager soit chargé
+        if (typeof window.teamManager === 'undefined') {
+            console.error('❌ team-manager.js non chargé !');
+            setTimeout(() => this.init(), 100);
+            return;
+        }
+
         this.setupEventListeners();
-        this.loadAvailableTeams();
+        this.loadTeamSelector();
         this.loadSavedComposition();
-        console.log('✅ CompositionPage v3.2 prêt');
     }
 
+    /**
+     * Configurer les événements
+     */
     setupEventListeners() {
-        // Sélection équipe
-        const teamSelector = document.getElementById('teamSelector');
-        if (teamSelector) {
-            teamSelector.addEventListener('change', (e) => {
-                selectedTeamId = e.target.value;
-                if (selectedTeamId) {
-                    this.loadTeamPlayers();
-                    document.getElementById('compositionSection').style.display = 'block';
-                }
-            });
-        }
+        // Sélection d'équipe
+        document.getElementById('teamSelector').addEventListener('change', (e) => {
+            this.onTeamSelect(e.target.value);
+        });
 
-        // Changement formation
-        const formationSelector = document.getElementById('formationSelector');
-        if (formationSelector) {
-            formationSelector.addEventListener('change', (e) => {
-                currentFormation = e.target.value;
-                this.rebuildField();
-            });
-        }
+        // Boutons
+        document.getElementById('validateBtn').addEventListener('click', () => {
+            this.validateComposition();
+        });
 
-        // Bouton validation
-        const validateBtn = document.getElementById('validateBtn');
-        if (validateBtn) {
-            validateBtn.addEventListener('click', () => this.validateComposition());
-        }
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            this.clearSelection();
+        });
 
-        // Bouton réinitialisation
-        const resetBtn = document.getElementById('resetBtn');
-        if (resetBtn) {
-            resetBtn.addEventListener('click', () => this.resetComposition());
-        }
-
-        // Bouton sauvegarde
-        const saveBtn = document.getElementById('saveBtn');
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => this.saveComposition());
-        }
+        document.getElementById('closeBtn').addEventListener('click', () => {
+            document.getElementById('compositionSection').style.display = 'none';
+        });
     }
 
-    loadAvailableTeams() {
-        const teams = window.teamManager.getAllTeams();
-        console.log('🔍 Équipes disponibles:', teams);
-        
+    /**
+     * Charger la liste des équipes dans le sélecteur
+     */
+    loadTeamSelector() {
         const selector = document.getElementById('teamSelector');
-        if (selector && teams.length > 0) {
-            selector.innerHTML = '<option value="">-- Sélectionner une équipe --</option>';
-            teams.forEach(team => {
-                const option = document.createElement('option');
-                option.value = team.id;
-                option.textContent = `${team.name}${team.category ? ' - ' + team.category : ''}`;
-                selector.appendChild(option);
-            });
-        }
-    }
+        const teams = window.teamManager.getAllTeams();
+        
+        // Réinitialiser
+        selector.innerHTML = '<option value="">-- Sélectionner une équipe --</option>';
 
-    loadTeamPlayers() {
-        if (!selectedTeamId) return;
-
-        const team = window.teamManager.getTeam(selectedTeamId);
-        if (!team || !team.players) {
-            console.error('❌ Équipe introuvable');
+        if (teams.length === 0) {
+            console.warn('⚠️ Aucune équipe trouvée');
             return;
         }
 
-        availablePlayers = team.players;
-        console.log(`📥 ${availablePlayers.length} joueuses chargées`);
+        // Ajouter toutes les équipes
+        teams.forEach(team => {
+            const option = document.createElement('option');
+            option.value = team.id;
+            option.textContent = `${team.name}${team.category ? ' - ' + team.category : ''}`;
+            selector.appendChild(option);
+        });
 
-        // Reconstruire le terrain
-        this.rebuildField();
-        
-        // Afficher les joueuses disponibles
-        this.updatePlayersList();
+        console.log(`✅ ${teams.length} équipe(s) chargée(s)`);
     }
 
-    rebuildField() {
-        const formation = FORMATIONS[currentFormation];
-        if (!formation) return;
-
-        console.log('🏗️ Reconstruction terrain pour formation:', currentFormation, formation);
-
-        // Réinitialiser la composition
-        fieldComposition = { gk: [] };
-        
-        let lineIndex = 0;
-        let zoneCounter = { def: 0, mid: 0, att: 0 };
-
-        formation.lines.forEach(line => {
-            for (let i = 0; i < line.zones; i++) {
-                const zoneKey = `${line.type}-${zoneCounter[line.type]}`;
-                fieldComposition[zoneKey] = [];
-                zoneCounter[line.type]++;
+    /**
+     * Charger une composition sauvegardée
+     */
+    loadSavedComposition() {
+        try {
+            const saved = localStorage.getItem('footballStats_composition');
+            if (saved) {
+                const data = JSON.parse(saved);
+                if (data.teamId && data.players) {
+                    this.selectedTeamId = data.teamId;
+                    this.selectedPlayers = data.players;
+                    
+                    // Pré-sélectionner l'équipe
+                    document.getElementById('teamSelector').value = data.teamId;
+                    this.onTeamSelect(data.teamId);
+                }
             }
-            lineIndex++;
-        });
-
-        console.log('✅ Terrain reconstruit avec', formation.lines.length, 'lignes de jeu');
-        this.updateFieldDisplay();
+        } catch (error) {
+            console.error('Erreur chargement composition sauvegardée:', error);
+        }
     }
 
-    updateFieldDisplay() {
-        const fieldContainer = document.getElementById('fieldGrid');
-        if (!fieldContainer) return;
-
-        fieldContainer.innerHTML = '';
-
-        const formation = FORMATIONS[currentFormation];
-        
-        // Afficher le terrain avec les zones de drop
-        // Ordre: Adversaire → Attaque → Milieux → Défense → GK → Notre but
-        
-        // En-tête adversaire
-        fieldContainer.innerHTML += '<div style="grid-column: 1/-1; text-align: center; font-weight: bold; color: white; padding: 0.5rem; background: rgba(255,0,0,0.3); border-radius: 4px;">ADVERSAIRE</div>';
-
-        // Lignes de jeu (attaque → défense)
-        formation.lines.forEach((line, lineIndex) => {
-            // Label ligne
-            const lineLabel = document.createElement('div');
-            lineLabel.style.cssText = 'grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.7); font-size: 0.8rem; padding: 0.25rem;';
-            lineLabel.textContent = line.label;
-            fieldContainer.appendChild(lineLabel);
-
-            // Zones de cette ligne
-            const lineDiv = document.createElement('div');
-            lineDiv.style.cssText = 'grid-column: 1/-1; display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; padding: 0.5rem 0;';
-
-            for (let i = 0; i < line.zones; i++) {
-                const zoneKey = `${line.type}-${i}`;
-                const dropZone = this.createDropZone(zoneKey, line.type);
-                lineDiv.appendChild(dropZone);
-            }
-
-            fieldContainer.appendChild(lineDiv);
-        });
-
-        // Gardienne
-        const gkLabel = document.createElement('div');
-        gkLabel.style.cssText = 'grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.7); font-size: 0.8rem; padding: 0.25rem;';
-        gkLabel.textContent = 'Gardienne';
-        fieldContainer.appendChild(gkLabel);
-
-        const gkZone = this.createDropZone('gk', 'gk');
-        gkZone.style.width = '100%';
-        fieldContainer.appendChild(gkZone);
-
-        // Pied de page
-        fieldContainer.innerHTML += '<div style="grid-column: 1/-1; text-align: center; font-weight: bold; color: white; padding: 0.5rem; background: rgba(0,255,0,0.3); border-radius: 4px;">NOTRE BUT</div>';
-
-        console.log('⚽ Mise à jour terrain:', fieldComposition);
-        this.updateStatus();
-    }
-
-    createDropZone(zoneKey, posType) {
-        const zone = document.createElement('div');
-        zone.className = 'drop-zone';
-        zone.dataset.zone = zoneKey;
-        
-        // Style adapté au type de position
-        let bgColor = 'rgba(255,255,255,0.1)';
-        if (posType === 'gk') bgColor = 'rgba(255,235,59,0.2)';
-        else if (posType === 'def') bgColor = 'rgba(33,150,243,0.2)';
-        else if (posType === 'mid') bgColor = 'rgba(156,39,176,0.2)';
-        else if (posType === 'att') bgColor = 'rgba(244,67,54,0.2)';
-
-        zone.style.cssText = `
-            background: ${bgColor};
-            border: 2px dashed rgba(255,255,255,0.3);
-            border-radius: 8px;
-            padding: 0.5rem;
-            min-height: 50px;
-            min-width: 50px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.25rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        `;
-
-        // Drag & Drop
-        zone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            zone.style.background = 'rgba(52,152,219,0.4)';
-            zone.style.borderColor = '#3498db';
-        });
-
-        zone.addEventListener('dragleave', () => {
-            zone.style.background = bgColor;
-            zone.style.borderColor = 'rgba(255,255,255,0.3)';
-        });
-
-        zone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            zone.style.background = bgColor;
-            zone.style.borderColor = 'rgba(255,255,255,0.3)';
-            
-            if (draggedPlayerId) {
-                this.placePlayerOnField(draggedPlayerId, zoneKey);
-            }
-        });
-
-        // Afficher les joueuses dans cette zone
-        this.renderPlayersInZone(zone, zoneKey);
-
-        return zone;
-    }
-
-    renderPlayersInZone(zoneElement, zoneKey) {
-        const players = fieldComposition[zoneKey] || [];
-        
-        players.forEach(playerId => {
-            const player = availablePlayers.find(p => p.id === playerId);
-            if (player) {
-                const badge = document.createElement('div');
-                badge.style.cssText = `
-                    background: rgba(255,255,255,0.9);
-                    color: #2c3e50;
-                    padding: 0.25rem 0.5rem;
-                    border-radius: 4px;
-                    font-size: 0.75rem;
-                    font-weight: bold;
-                    cursor: move;
-                    white-space: nowrap;
-                `;
-                badge.textContent = player.number ? `#${player.number} ${player.name}` : player.name;
-                badge.draggable = true;
-                
-                badge.addEventListener('dragstart', () => {
-                    draggedPlayerId = playerId;
-                });
-
-                // Clic pour retirer du terrain
-                badge.addEventListener('click', () => {
-                    this.removePlayerFromField(playerId);
-                });
-
-                zoneElement.appendChild(badge);
-                
-                console.log(`⚽ ${player.name} placé en ${zoneKey}`);
-            }
-        });
-    }
-
-    placePlayerOnField(playerId, zoneKey) {
-        // ✅ FIX BUG 1: Vérifier le nombre de joueuses SUR LE TERRAIN
-        const currentOnField = this.countPlayersOnField();
-        
-        // Vérifier si le joueur est déjà sur le terrain
-        const isAlreadyOnField = this.isPlayerOnField(playerId);
-        
-        if (!isAlreadyOnField && currentOnField >= 11) {
-            showNotification('❌ Maximum 11 joueuses sur le terrain', 'warning');
+    /**
+     * Événement : sélection d'une équipe
+     */
+    onTeamSelect(teamId) {
+        if (!teamId) {
+            document.getElementById('compositionSection').style.display = 'none';
             return;
         }
 
-        // Retirer de l'ancienne position si déjà sur terrain
-        if (isAlreadyOnField) {
-            this.removePlayerFromField(playerId);
+        this.selectedTeamId = teamId;
+        this.selectedPlayers = [];
+
+        const team = window.teamManager.getTeam(teamId);
+        if (!team) {
+            console.error('❌ Équipe non trouvée:', teamId);
+            return;
         }
 
-        // Retirer du banc si présent
-        const benchIndex = benchPlayers.indexOf(playerId);
-        if (benchIndex !== -1) {
-            benchPlayers.splice(benchIndex, 1);
-        }
+        // Afficher la section composition
+        document.getElementById('selectedTeamDisplay').textContent = team.name;
+        document.getElementById('compositionSection').style.display = 'block';
 
-        // Ajouter à la nouvelle zone
-        if (!fieldComposition[zoneKey]) {
-            fieldComposition[zoneKey] = [];
-        }
-        fieldComposition[zoneKey].push(playerId);
-
-        // Mise à jour affichage
-        this.updateFieldDisplay();
+        // Mettre à jour l'affichage
         this.updatePlayersList();
-    }
-
-    removePlayerFromField(playerId) {
-        // Retirer de toutes les zones
-        Object.keys(fieldComposition).forEach(zone => {
-            const index = fieldComposition[zone].indexOf(playerId);
-            if (index !== -1) {
-                fieldComposition[zone].splice(index, 1);
-            }
-        });
-
         this.updateFieldDisplay();
-        this.updatePlayersList();
+        this.updateCompositionStatus();
     }
 
-    isPlayerOnField(playerId) {
-        return Object.values(fieldComposition)
-            .flat()
-            .includes(playerId);
-    }
-
-    countPlayersOnField() {
-        return Object.values(fieldComposition)
-            .flat()
-            .filter(id => id).length;
-    }
-
+    /**
+     * Afficher la liste des joueuses
+     */
     updatePlayersList() {
-        const listContainer = document.getElementById('playersList');
+        if (!this.selectedTeamId) return;
+
+        const team = window.teamManager.getTeam(this.selectedTeamId);
+        const playersContainer = document.getElementById('playersList');
         const benchContainer = document.getElementById('benchList');
         
-        if (!listContainer || !benchContainer) return;
-
-        listContainer.innerHTML = '';
+        playersContainer.innerHTML = '';
         benchContainer.innerHTML = '';
 
-        // Joueuses disponibles (ni sur terrain, ni sur banc)
-        const onField = Object.values(fieldComposition).flat();
-        const unavailable = [...onField, ...benchPlayers];
-
-        availablePlayers.forEach(player => {
-            const isOnField = onField.includes(player.id);
-            const isOnBench = benchPlayers.includes(player.id);
-            
-            const btn = document.createElement('button');
-            btn.className = 'player-card';
-            btn.draggable = true;
-            
-            // ✅ FIX BUG 3: Boutons plus compacts
-            btn.style.cssText = `
-                background: ${isOnField ? 'rgba(52,152,219,0.3)' : (isOnBench ? 'rgba(241,196,15,0.3)' : 'rgba(255,255,255,0.1)')};
-                border: 2px solid ${isOnField ? '#3498db' : (isOnBench ? '#f1c40f' : 'rgba(255,255,255,0.2)')};
-                padding: 0.5rem;
-                border-radius: 6px;
-                min-height: 60px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                transition: all 0.2s ease;
-            `;
-
-            const posInfo = POSITION_MAP[player.position] || { icon: '⚽', label: player.position };
-
-            btn.innerHTML = `
-                <div style="font-size: 1.2rem;">${posInfo.icon}</div>
-                <div style="font-size: 0.8rem; font-weight: bold; color: white;">${player.name}</div>
-                <div style="font-size: 0.7rem; color: rgba(255,255,255,0.7);">${posInfo.label}${player.number ? ' #' + player.number : ''}</div>
-            `;
-
-            // Drag
-            btn.addEventListener('dragstart', () => {
-                draggedPlayerId = player.id;
-            });
-
-            // Clic pour ajouter au banc
-            btn.addEventListener('click', () => {
-                if (!isOnField && !isOnBench) {
-                    this.addToBench(player.id);
-                } else if (isOnBench) {
-                    this.removeFromBench(player.id);
-                }
-            });
-
-            if (!isOnField && !isOnBench) {
-                listContainer.appendChild(btn);
-            } else if (isOnBench) {
-                benchContainer.appendChild(btn);
-            }
-        });
-
-        console.log(`🔄 Mise à jour liste joueuses: ${availablePlayers.length}`);
-        this.updateStatus();
-    }
-
-    addToBench(playerId) {
-        // ✅ FIX BUG 2: Gestion remplaçantes fonctionnelle
-        if (benchPlayers.length >= 7) {
-            showNotification('❌ Maximum 7 remplaçantes', 'warning');
+        if (!team.players || team.players.length === 0) {
+            playersContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #bdc3c7;">Aucune joueuse dans cette équipe. Ajoutez-en dans la page Équipes.</p>';
             return;
         }
 
-        if (!benchPlayers.includes(playerId)) {
-            benchPlayers.push(playerId);
-            this.updatePlayersList();
-            showNotification('✅ Remplaçante ajoutée au banc', 'success');
-        }
-    }
-
-    removeFromBench(playerId) {
-        const index = benchPlayers.indexOf(playerId);
-        if (index !== -1) {
-            benchPlayers.splice(index, 1);
-            this.updatePlayersList();
-        }
-    }
-
-    updateStatus() {
-        const onFieldCount = this.countPlayersOnField();
-        const gkCount = (fieldComposition.gk || []).length;
-
-        // Compter par position
-        let gkTotal = 0, dfTotal = 0, mfTotal = 0, fwTotal = 0;
-
-        Object.keys(fieldComposition).forEach(zone => {
-            fieldComposition[zone].forEach(playerId => {
-                const player = availablePlayers.find(p => p.id === playerId);
-                if (player) {
-                    if (player.position === 'GK') gkTotal++;
-                    else if (player.position === 'DF') dfTotal++;
-                    else if (player.position === 'MF') mfTotal++;
-                    else if (player.position === 'FW') fwTotal++;
-                }
-            });
-        });
-
-        const statusEl = document.getElementById('compositionStatus');
-        const validateBtn = document.getElementById('validateBtn');
-
-        console.log(`📊 Statut: ${onFieldCount}/11 titulaires, ${gkTotal} GK, ${dfTotal} DF, ${mfTotal} MF, ${fwTotal} FW (${benchPlayers.length} remplaçants)`);
-
-        // ✅ FIX BUG 4: Validation correcte
-        if (onFieldCount === 11 && gkCount === 1) {
-            if (statusEl) {
-                statusEl.innerHTML = '✅ Composition complète et valide !';
-                statusEl.style.color = '#2ecc71';
-            }
-            if (validateBtn) {
-                validateBtn.disabled = false;
-                validateBtn.className = 'btn btn-success';
-            }
-        } else {
-            if (statusEl) {
-                statusEl.innerHTML = `⚠️ ${onFieldCount}/11 titulaires${gkCount === 0 ? ' - Gardienne manquante' : ''}`;
-                statusEl.style.color = '#f39c12';
-            }
-            if (validateBtn) {
-                validateBtn.disabled = true;
-                validateBtn.className = 'btn btn-secondary';
-            }
-        }
-    }
-
-    validateComposition() {
-        const onFieldCount = this.countPlayersOnField();
-        const gkCount = (fieldComposition.gk || []).length;
-
-        if (onFieldCount !== 11 || gkCount !== 1) {
-            showNotification('❌ Composition invalide : 11 joueuses dont 1 gardienne requises', 'error');
-            return;
-        }
-
-        showNotification('✅ Composition validée avec succès !', 'success');
-        this.saveComposition();
-    }
-
-    saveComposition() {
-        const compositionData = {
-            teamId: selectedTeamId,
-            teamName: window.teamManager.getTeam(selectedTeamId).name,
-            formation: currentFormation,
-            fieldComposition: fieldComposition,
-            benchPlayers: benchPlayers,
-            savedAt: new Date().toISOString()
+        const positions = { 
+            gardienne: '🥅', 
+            défenseuse: '🛡️', 
+            milieu: '🎯', 
+            attaquante: '⚔️' 
         };
 
-        // Sauvegarder localement
-        localStorage.setItem('footballStats_composition', JSON.stringify(compositionData));
+        team.players.forEach(player => {
+            const isSelected = this.selectedPlayers.includes(player.id);
+            const isBench = isSelected && this.selectedPlayers.indexOf(player.id) >= 11;
 
-        // TODO: Sauvegarder dans Supabase (v3.3)
-        console.log('💾 Composition sauvegardée:', compositionData);
-        showNotification('💾 Composition sauvegardée !', 'success');
-    }
+            const btn = document.createElement('button');
+            btn.className = 'player-btn';
+            btn.style.cssText = `
+                padding: 0.75rem;
+                border: 2px solid #ecf0f1;
+                border-radius: 6px;
+                background: ${isSelected ? '#3498db' : '#f8f9fa'};
+                color: ${isSelected ? 'white' : '#2c3e50'};
+                cursor: pointer;
+                font-weight: bold;
+                transition: all 0.2s ease;
+            `;
+            btn.onmouseover = () => btn.style.transform = 'scale(1.05)';
+            btn.onmouseout = () => btn.style.transform = 'scale(1)';
 
-    loadSavedComposition() {
-        const saved = localStorage.getItem('footballStats_composition');
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                console.log('💾 Composition sauvegardée trouvée:', data);
-                
-                // Charger automatiquement si équipe existe
-                if (data.teamId && window.teamManager.getTeam(data.teamId)) {
-                    selectedTeamId = data.teamId;
-                    currentFormation = data.formation || '4-2-3-1';
-                    fieldComposition = data.fieldComposition || {};
-                    benchPlayers = data.benchPlayers || [];
-                    
-                    document.getElementById('teamSelector').value = selectedTeamId;
-                    document.getElementById('formationSelector').value = currentFormation;
-                    
-                    this.loadTeamPlayers();
-                    document.getElementById('compositionSection').style.display = 'block';
-                    
-                    console.log('📂 Chargement composition:', data);
-                }
-            } catch (e) {
-                console.error('Erreur chargement composition:', e);
+            btn.innerHTML = `
+                <div style="font-size: 1rem; margin-bottom: 0.25rem;">${positions[player.position] || '⚽'}</div>
+                <div style="font-size: 0.85rem; font-weight: bold;">${player.name}</div>
+                <div style="font-size: 0.75rem; opacity: 0.9;">${player.position}${player.number ? ' N°' + player.number : ''}</div>
+            `;
+
+            btn.onclick = () => this.togglePlayer(player.id);
+
+            if (isSelected && !isBench) {
+                playersContainer.appendChild(btn);
+            } else if (isBench) {
+                benchContainer.appendChild(btn);
+            } else {
+                playersContainer.appendChild(btn);
             }
+        });
+    }
+
+    /**
+     * Sélectionner/Désélectionner une joueuse
+     */
+    togglePlayer(playerId) {
+        const index = this.selectedPlayers.indexOf(playerId);
+        
+        if (index === -1) {
+            // Ajouter le joueur
+            if (this.selectedPlayers.length < 18) { // 11 titulaires + 7 remplaçants max
+                this.selectedPlayers.push(playerId);
+            } else {
+                this.showNotification('Maximum 18 joueuses (11 titulaires + 7 remplaçants)', 'warning');
+                return;
+            }
+        } else {
+            // Retirer le joueur
+            this.selectedPlayers.splice(index, 1);
+        }
+
+        this.updatePlayersList();
+        this.updateFieldDisplay();
+        this.updateCompositionStatus();
+    }
+
+    /**
+     * Mettre à jour l'affichage du terrain
+     */
+    updateFieldDisplay() {
+        const team = window.teamManager.getTeam(this.selectedTeamId);
+        if (!team) return;
+        
+        // Filtrer les 11 titulaires
+        const starters = this.selectedPlayers.slice(0, 11);
+        
+        const gk = starters.filter(id => {
+            const player = team.players.find(p => p.id === id);
+            return player?.position === 'gardienne';
+        });
+        
+        const def = starters.filter(id => {
+            const player = team.players.find(p => p.id === id);
+            return player?.position === 'défenseuse';
+        });
+        
+        const mid = starters.filter(id => {
+            const player = team.players.find(p => p.id === id);
+            return player?.position === 'milieu';
+        });
+        
+        const att = starters.filter(id => {
+            const player = team.players.find(p => p.id === id);
+            return player?.position === 'attaquante';
+        });
+
+        // Mettre à jour les conteneurs
+        this.updateFieldSection('fieldGK', gk, team);
+        this.updateFieldSection('fieldDef', def, team);
+        this.updateFieldSection('fieldMid', mid, team);
+        this.updateFieldSection('fieldAtt', att, team);
+    }
+
+    /**
+     * Mettre à jour une section du terrain
+     */
+    updateFieldSection(containerId, playerIds, team) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+
+        playerIds.forEach(id => {
+            const player = team.players.find(p => p.id === id);
+            if (!player) return;
+
+            const badge = document.createElement('div');
+            badge.style.cssText = `
+                background: rgba(255,255,255,0.3);
+                color: white;
+                padding: 0.5rem 0.75rem;
+                border-radius: 4px;
+                font-size: 0.85rem;
+                font-weight: bold;
+            `;
+            badge.textContent = player.number ? `${player.name} (${player.number})` : player.name;
+            container.appendChild(badge);
+        });
+    }
+
+    /**
+     * Mettre à jour le statut de la composition
+     */
+    updateCompositionStatus() {
+        const starters = this.selectedPlayers.slice(0, 11);
+        const team = window.teamManager.getTeam(this.selectedTeamId);
+
+        const gkCount = starters.filter(id => {
+            const player = team.players.find(p => p.id === id);
+            return player?.position === 'gardienne';
+        }).length;
+
+        const statusEl = document.getElementById('statusText');
+        const validateBtn = document.getElementById('validateBtn');
+
+        if (starters.length === 11 && gkCount === 1) {
+            statusEl.innerHTML = `✅ Composition complète (${starters.length}/11 - 1 GK)`;
+            statusEl.style.color = '#2ecc71';
+            validateBtn.disabled = false;
+            validateBtn.className = 'btn btn-success';
+        } else {
+            statusEl.innerHTML = `⚠️ Composition incomplète (${starters.length}/11${gkCount > 0 ? ` - ${gkCount} GK` : ''})`;
+            statusEl.style.color = '#f39c12';
+            validateBtn.disabled = true;
+            validateBtn.className = 'btn btn-secondary';
         }
     }
 
-    resetComposition() {
-        if (confirm('⚠️ Réinitialiser la composition ? Cette action est irréversible.')) {
-            fieldComposition = { gk: [] };
-            benchPlayers = [];
-            this.rebuildField();
+    /**
+     * Valider la composition
+     */
+    validateComposition() {
+        const starters = this.selectedPlayers.slice(0, 11);
+        if (starters.length !== 11) {
+            this.showNotification('La composition doit avoir 11 joueuses', 'warning');
+            return;
+        }
+
+        // Sauvegarder la composition
+        const compositionData = {
+            teamId: this.selectedTeamId,
+            teamName: window.teamManager.getTeam(this.selectedTeamId).name,
+            players: starters,
+            bench: this.selectedPlayers.slice(11),
+            createdAt: new Date().toISOString()
+        };
+
+        localStorage.setItem('footballStats_composition', JSON.stringify(compositionData));
+        this.showNotification('✅ Composition sauvegardée !', 'success');
+    }
+
+    /**
+     * Réinitialiser la sélection
+     */
+    clearSelection() {
+        if (confirm('Êtes-vous sûr de vouloir réinitialiser la composition ?')) {
+            this.selectedPlayers = [];
             this.updatePlayersList();
-            showNotification('🔄 Composition réinitialisée', 'info');
+            this.updateFieldDisplay();
+            this.updateCompositionStatus();
+            this.showNotification('🔄 Composition réinitialisée', 'info');
+        }
+    }
+
+    /**
+     * Afficher une notification
+     */
+    showNotification(message, type = 'info') {
+        if (typeof window.NotificationManager !== 'undefined' && window.NotificationManager.show) {
+            window.NotificationManager.show(message, type);
+        } else {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+            alert(message);
         }
     }
 }
 
-// ========================================
-// INITIALISATION
-// ========================================
+// ===== INITIALISATION =====
+let compositionManager;
 
-let compositionPage = null;
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Attendre que les dépendances soient chargées
-    const checkDeps = setInterval(() => {
-        if (typeof window.teamManager !== 'undefined' && 
-            typeof window.NotificationManager !== 'undefined') {
-            clearInterval(checkDeps);
-            compositionPage = new CompositionPage();
-        }
-    }, 100);
+document.addEventListener('DOMContentLoaded', function() {
+    compositionManager = new CompositionManager();
+    console.log('✅ Composition Manager chargé et initialisé');
 });
-
-// Fonction globale pour notifications
-function showNotification(message, type = 'info') {
-    if (typeof window.NotificationManager !== 'undefined' && window.NotificationManager.show) {
-        window.NotificationManager.show(message, type);
-    } else {
-        console.log(`[${type.toUpperCase()}] ${message}`);
-    }
-}
-
-console.log('📦 Module CompositionPage v3.2 chargé');
